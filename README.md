@@ -78,3 +78,7 @@ An original procedural wave field of ASCII characters is drawn on a decorative c
 ### Animation controller
 
 Parametric SVG expressions interpolate in one animation loop. Eyes lead the head, with inertial tracking, breathing, click squash, occasional double blink, 12 emotions, idle and sleeping states. CTA hover/focus holds excitement; Telegram hover/focus holds curiosity; title hover holds curiosity. Context reactions take priority over idle reactions. Click emits a decorative ASCII ripple when enabled. Reduced motion disables autonomous animation and tracking; explicit reactions remain available. Hidden tabs stop the animation loop.
+
+### Mobile gestures and haptics
+
+Touch anywhere directs gaze for 1.5 seconds; scroll briefly directs gaze vertically. Tap the robot for a reaction, double tap within 350 ms for hearts, or hold 550 ms without moving more than 12 px for confusion. Touch CTA triggers excitement and Telegram triggers a wink on pointerdown without delaying navigation. Haptics use navigator.vibrate when available (18 ms tap, 25 ms double tap/hold); unsupported browsers such as iOS Safari silently keep visual feedback. Mobile robot painting is limited to approximately 30 FPS and ASCII to 10 FPS with a sparser grid. Gestures do not cancel normal page scrolling; reduced-motion disables autonomous tracking and animation.

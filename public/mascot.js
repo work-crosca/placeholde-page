@@ -3,6 +3,8 @@ const button=document.querySelector('.mascot');
 if(button){
 const svg=button.querySelector('svg'),head=svg.querySelector('#head'),eyes=svg.querySelector('#eyes'),left=svg.querySelector('#eye-left'),right=svg.querySelector('#eye-right'),mouth=svg.querySelector('#mouth'),hearts=svg.querySelector('#hearts'),sleep=svg.querySelector('#sleep-symbols');
 const motion=matchMedia('(prefers-reduced-motion: reduce)');
+const mobile=matchMedia('(max-width: 700px), (pointer: coarse)');
+let touchUntil=0,press=null,pressTimer=0,suppressClick=false,lastTouchTap=-Infinity,lastScroll=window.scrollY,scrollAt=-Infinity;
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const random=(a,b)=>a+Math.random()*(b-a);
 // Eye geometry: horizontal half-span, vertical half-span, curve, stroke, offset.
@@ -21,9 +23,10 @@ const poses={
  shy:[E(9,0,-12,7,5),E(9,0,-12,7,5),9,0],
  angry:[E(11,6,0,9),E(11,-6,0,9),-8,0],
  curious:[E(0,11,0,17),E(0,7,0,14),5,0],
+ wink:[E(0,10,0,18),E(11,0,-5,6),9,0],
  blink:[E(10,0,0,3),E(10,0,0,3),0,0]
 };
-const names=Object.keys(poses).filter(n=>!['neutral','blink','sleepy'].includes(n));
+const names=Object.keys(poses).filter(n=>!['neutral','blink','sleepy','wink'].includes(n));
 const vector=n=>[...poses[n][0],...poses[n][1],...poses[n].slice(2),n==='love'?1:0];
 let current=vector('neutral'),target=current.slice(),state='idle',emotion='neutral',lastEmotion='',until=0,frame=0,previous=0,activity=performance.now(),idleAt=activity+random(4000,8000),blinkAt=activity+random(3000,6000),secondBlink=0,hover=null,pointer=null,gx=0,gy=0,hx=0,hy=0,tilt=0,pulse=0,clicks=0,lastClick=-Infinity,lastPointer=null,lastFast=-Infinity,near=false;
 function set(name,next='reaction',duration=1400,now=performance.now()){
@@ -62,6 +65,8 @@ function resume(now){activity=now;idleAt=now+random(4000,8000);if(state==='sleep
 function normal(now){set('neutral',pointer?'tracking':'idle',Infinity,now);}
 function tick(now){
  frame=0;if(document.hidden||motion.matches)return;
+ if(mobile.matches&&previous&&now-previous<1000/30-1){frame=requestAnimationFrame(tick);return;}
+ if(touchUntil&&now>=touchUntil){pointer=null;touchUntil=0;}
  const dt=Math.min(50,Math.max(1,now-(previous||now-16)));previous=now;
  if(hover){if(emotion!==hover.name)set(hover.name,'context',Infinity,now);}
  else if(state==='context')normal(now);
@@ -77,7 +82,7 @@ function start(){cancelAnimationFrame(frame);frame=0;previous=0;if(!document.hid
 function ripple(){if(motion.matches)return;const b=svg.getBoundingClientRect();window.dispatchEvent(new CustomEvent('mascot:ripple',{detail:{x:b.left+b.width/2,y:b.top+b.height/2}}));}
 window.addEventListener('pointermove',e=>{
  if(e.pointerType==='touch'||motion.matches)return;
- const now=performance.now();resume(now);pointer={x:e.clientX,y:e.clientY};
+ const now=performance.now();resume(now);touchUntil=0;pointer={x:e.clientX,y:e.clientY};
  const b=svg.getBoundingClientRect(),close=Math.hypot(e.clientX-b.left-b.width/2,e.clientY-b.top-b.height/2)<b.width*.65;
  if(!hover&&['idle','tracking'].includes(state)){
   if(lastPointer&&now-lastPointer.t>0&&now-lastPointer.t<100&&Math.hypot(e.clientX-lastPointer.x,e.clientY-lastPointer.y)/(now-lastPointer.t)>2.5&&now-lastFast>3500){lastFast=now;set('surprised','reaction',850,now);}
@@ -85,17 +90,60 @@ window.addEventListener('pointermove',e=>{
  }
  near=close;lastPointer={...pointer,t:now};
 },{passive:true});
-function clearPointer(){pointer=null;near=false;lastPointer=null;}
-document.documentElement.addEventListener('pointerleave',clearPointer);window.addEventListener('blur',clearPointer);
-button.addEventListener('click',()=>{const now=performance.now();resume(now);clicks=now-lastClick<700?clicks+1:1;lastClick=now;pulse=1;set(clicks>=3?(clicks%2?'confused':'angry'):choose(),'reaction',1400,now);ripple();if(motion.matches){clearTimeout(reducedTimer);reducedTimer=setTimeout(()=>normal(performance.now()),1400);}});
+function clearPointer(){pointer=null;touchUntil=0;near=false;lastPointer=null;}
+document.documentElement.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch')clearPointer();});window.addEventListener('blur',clearPointer);
 let reducedTimer;
+function feedback(ms=18){try{if(typeof navigator.vibrate==='function')navigator.vibrate(ms);}catch{}}
+function explicit(name,now=performance.now(),duration=1400){
+ hover=null;resume(now);set(name,'reaction',duration,now);
+ if(motion.matches){clearTimeout(reducedTimer);reducedTimer=setTimeout(()=>normal(performance.now()),duration);}
+}
+window.addEventListener('pointerdown',e=>{
+ if(e.pointerType!=='touch'||!e.isPrimary)return;
+ const now=performance.now();resume(now);
+ if(!motion.matches){pointer={x:e.clientX,y:e.clientY};touchUntil=now+1500;}
+},{passive:true});
+button.addEventListener('pointerdown',e=>{
+ if(e.pointerType!=='touch'||!e.isPrimary)return;
+ suppressClick=false;clearTimeout(pressTimer);
+ press={id:e.pointerId,x:e.clientX,y:e.clientY};
+ pressTimer=setTimeout(()=>{if(!press)return;suppressClick=true;explicit('confused');pulse=1;feedback(25);ripple();},550);
+},{passive:true});
+window.addEventListener('pointermove',e=>{
+ if(press&&e.pointerId===press.id&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>12){clearTimeout(pressTimer);press=null;}
+},{passive:true});
+function release(e){if(press&&e.pointerId===press.id){clearTimeout(pressTimer);press=null;}if(e.type==='pointercancel')suppressClick=false;}
+window.addEventListener('pointerup',release,{passive:true});
+window.addEventListener('pointercancel',release,{passive:true});
+button.addEventListener('contextmenu',e=>{if(press||suppressClick)e.preventDefault();});
+button.addEventListener('click',e=>{
+ if(suppressClick&&e.detail!==0){suppressClick=false;return;}
+ suppressClick=false;
+ const now=performance.now(),touch=e.pointerType==='touch'||(mobile.matches&&e.detail>0);
+ clicks=now-lastClick<700?clicks+1:1;lastClick=now;
+ const double=touch&&now-lastTouchTap<350;
+ if(touch)lastTouchTap=double?-Infinity:now;
+ pulse=1;explicit(double?'love':clicks>=3?(clicks%2?'confused':'angry'):choose(),now);
+ feedback(double?25:18);ripple();
+});
+window.addEventListener('scroll',()=>{
+ const y=window.scrollY,delta=y-lastScroll;lastScroll=y;
+ if(!mobile.matches||motion.matches||Math.abs(delta)<2)return;
+ const now=performance.now();resume(now);
+ if(now-scrollAt<70)return;scrollAt=now;
+ const b=svg.getBoundingClientRect();pointer={x:b.left+b.width/2,y:b.top+b.height/2+Math.sign(delta)*b.width};touchUntil=now+900;
+},{passive:true});
 const contexts=[['.contact','excited'],['.social','curious'],['.hero h1','curious']];
 for(const [selector,name] of contexts){const el=document.querySelector(selector);if(!el)continue;let inside=false,focused=false;
  function update(){const now=performance.now();if(inside||focused){resume(now);hover={el,name};set(name,'context',Infinity,now);}else if(hover?.el===el){hover=null;normal(now);}}
  el.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch'){inside=true;update();}});el.addEventListener('pointerleave',()=>{inside=false;update();});
- if(selector!=='.hero h1'){el.addEventListener('focus',()=>{focused=true;update();});el.addEventListener('blur',()=>{focused=false;update();});}
+ if(selector!=='.hero h1'){
+  let touchAt=-Infinity;
+  el.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'){touchAt=performance.now();inside=false;focused=false;explicit(selector==='.social'?'wink':'excited',touchAt,1200);}},{passive:true});
+  el.addEventListener('focus',()=>{if(performance.now()-touchAt>1000){focused=true;update();}});el.addEventListener('blur',()=>{focused=false;update();});
+ }
 }
-function reset(){cancelAnimationFrame(frame);clearTimeout(reducedTimer);hover=null;clearPointer();const now=performance.now();activity=now;idleAt=now+random(4000,8000);blinkAt=now+random(3000,6000);secondBlink=0;normal(now);start();}
-document.addEventListener('visibilitychange',reset);motion.addEventListener('change',reset);
+function reset(){cancelAnimationFrame(frame);clearTimeout(reducedTimer);clearTimeout(pressTimer);press=null;suppressClick=false;hover=null;clearPointer();const now=performance.now();activity=now;idleAt=now+random(4000,8000);blinkAt=now+random(3000,6000);secondBlink=0;normal(now);start();}
+document.addEventListener('visibilitychange',reset);motion.addEventListener('change',reset);mobile.addEventListener('change',reset);
 set(motion.matches?'neutral':'happy',motion.matches?'idle':'reaction',1200);start();
 }

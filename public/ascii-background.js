@@ -14,7 +14,7 @@ if(canvas){
   const dpr=Math.min(window.devicePixelRatio||1,1.5);
   canvas.width=Math.max(1,Math.round(width*dpr));canvas.height=Math.max(1,Math.round(height*dpr));
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  stepX=width<700?15:17;stepY=width<700?20:22;
+  stepX=width<700?23:17;stepY=width<700?28:22;
   ctx.font='12px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
   draw(0);
  }
@@ -38,7 +38,7 @@ if(canvas){
  }
  function tick(now){
   if(document.hidden||motion.matches){frame=0;return;}
-  if(now-last>=66){draw(now);last=now;}
+  if(now-last>=(width<700?100:66)){draw(now);last=now;}
   frame=requestAnimationFrame(tick);
  }
  function sync(){
