@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {render, config} from './src/page.js';
 const settings=config(process.env);
-const assets=new Map([['/style.css','text/css'],['/mascot.js','text/javascript'],['/favicon.svg','image/svg+xml']]);
+const assets=new Map([['/style.css','text/css'],['/mascot.js','text/javascript'],['/favicon.svg','image/svg+xml'],['/favicon.ico','image/x-icon'],['/apple-touch-icon.png','image/png'],['/icons/favicon-16.png','image/png'],['/icons/favicon-32.png','image/png'],['/icons/favicon-48.png','image/png'],['/images/social/mirco.png','image/png']]);
 const server=http.createServer(async(req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  const headers={'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"};

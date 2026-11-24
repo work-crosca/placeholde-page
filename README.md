@@ -28,6 +28,7 @@ All options are runtime environment variables, so one image can serve multiple d
 | SITE_TITLE | localized | Optional custom headline |
 | SITE_DESCRIPTION | localized | Optional custom description |
 | SITE_EMAIL | empty | Optional contact mailto link |
+| SITE_URL | empty | Public origin (e.g. https://example.mirco.uk), for absolute social preview URLs |
 | SITE_TELEGRAM | empty | Telegram username without @; hides the icon when unset or invalid |
 | SITE_MASCOT | true | Set false to hide mascot |
 
@@ -60,3 +61,7 @@ Run npm test and npm run build. For manual QA, inspect at 320, 768 and 1440px; v
 ## Design decisions
 
 Vanilla HTML/CSS/JS plus Node HTTP rather than Next.js/Tailwind: a temporary page needs no full client framework; React Icons is rendered server-side. Typography and colors are inspired by the supplied visual reference; the robot is independently drawn. The optional contact link opens an email client rather than pretending to collect subscriptions. No license is assigned automatically; repository owner can select one.
+
+## Brand assets and social previews
+
+Favicon SVG/ICO, PNG favicons, Apple touch icon and `public/images/social/mirco.png` are exact copies from `work-crosca/mirco.uk` commit `225d47aa2c7738702473429c40c43804be627ef4`. Open Graph and Twitter use the shared 1200 × 630 image with the placeholder's localized title and description. Set SITE_URL to the public origin for absolute preview URLs. Existing noindex policy is unchanged.
