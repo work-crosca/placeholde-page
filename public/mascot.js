@@ -1,66 +1,101 @@
-// Original vector expressions; no external mascot runtime or artwork.
+// Original parametric SVG animation. One state controller owns all expressions.
 const button=document.querySelector('.mascot');
-const svg=document.querySelector('#mascot');
-const face=document.querySelector('#face');
-const eyes=document.querySelector('#eyes');
-const left=document.querySelector('#eye-left');
-const right=document.querySelector('#eye-right');
-const mouth=document.querySelector('#mouth');
+if(button){
+const svg=button.querySelector('svg'),head=svg.querySelector('#head'),eyes=svg.querySelector('#eyes'),left=svg.querySelector('#eye-left'),right=svg.querySelector('#eye-right'),mouth=svg.querySelector('#mouth'),hearts=svg.querySelector('#hearts'),sleep=svg.querySelector('#sleep-symbols');
 const motion=matchMedia('(prefers-reduced-motion: reduce)');
-const fine=matchMedia('(any-pointer: fine)');
-const random=(min,max)=>min+Math.random()*(max-min);
-const names=['happy','surprised','curious','confused','love','bored','sleepy'];
-const normal=x=>`M${x-9} 69Q${x-9} 60 ${x} 60Q${x+9} 60 ${x+9} 69V88Q${x+9} 97 ${x} 97Q${x-9} 97 ${x-9} 88Z`;
-const arc=x=>`M${x-13} 86Q${x} 65 ${x+13} 86`;
-const closed=x=>`M${x-12} 79Q${x} 86 ${x+12} 79`;
-const heart=x=>`M${x} 94C${x-37} 68 ${x-9} 57 ${x} 72C${x+9} 57 ${x+37} 68 ${x} 94Z`;
-const big=x=>`M${x-12} 67Q${x-12} 55 ${x} 55Q${x+12} 55 ${x+12} 67V90Q${x+12} 102 ${x} 102Q${x-12} 102 ${x-12} 90Z`;
-let state='neutral',last='',lastActivity=Date.now(),idleTimer,blinkTimer,returnTimer,frame=0,dx=0,dy=0,near=false;
-function expression(name){
- state=name;button.dataset.emotion=name;
- for(const [el,x] of [[left,81],[right,159]]){
- let d=normal(x),stroke=0,fill='#9fd8ff',offset=0;
- if(name==='happy'){d=arc(x);stroke=8;fill='none';}
- if(['sleepy','blink','bored'].includes(name)){d=name==='bored'?`M${x-12} 79H${x+12}`:closed(x);stroke=6;fill='none';}
- if(name==='love')d=heart(x);
- if(name==='surprised')d=big(x);
- if(name==='curious')offset=5;
- if(name==='confused'&&x===159)offset=8;
- el.setAttribute('d',d);el.setAttribute('fill',fill);el.setAttribute('stroke-width',stroke);el.setAttribute('transform',`translate(0 ${offset})`);
- }
- mouth.setAttribute('d',name==='surprised'?'M120 110a7 9 0 1 0 0 18a7 9 0 1 0 0 -18': ['happy','love'].includes(name)?'M109 113Q120 128 131 113':name==='confused'?'M111 120Q116 113 121 119T131 116':'M115 119H125');
- mouth.setAttribute('fill',name==='surprised'?'#9fd8ff':'none');
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+const random=(a,b)=>a+Math.random()*(b-a);
+// Eye geometry: horizontal half-span, vertical half-span, curve, stroke, offset.
+const E=(w=0,h=10,c=0,s=18,o=0)=>[w,h,c,s,o];
+const N=E();
+const poses={
+ neutral:[N,N,0,0],happy:[E(13,0,-19,8),E(13,0,-19,8),15,0],
+ sad:[E(10,0,9,8,-2),E(10,0,9,8,-2),-11,0],
+ surprised:[E(0,12,0,23),E(0,12,0,23),0,1],
+ sleepy:[E(12,0,5,5),E(12,0,5,5),0,0],
+ love:[E(0,8,0,12),E(0,8,0,12),12,0],
+ suspicious:[E(11,4,0,7),E(11,-4,0,7),-4,0],
+ bored:[E(12,0,0,6),E(12,0,0,6),-3,0],
+ confused:[E(9,3,-6,9),E(8,-3,4,9,6),-6,0],
+ excited:[E(13,0,-24,10),E(13,0,-24,10),18,0],
+ shy:[E(9,0,-12,7,5),E(9,0,-12,7,5),9,0],
+ angry:[E(11,6,0,9),E(11,-6,0,9),-8,0],
+ curious:[E(0,11,0,17),E(0,7,0,14),5,0],
+ blink:[E(10,0,0,3),E(10,0,0,3),0,0]
+};
+const names=Object.keys(poses).filter(n=>!['neutral','blink','sleepy'].includes(n));
+const vector=n=>[...poses[n][0],...poses[n][1],...poses[n].slice(2),n==='love'?1:0];
+let current=vector('neutral'),target=current.slice(),state='idle',emotion='neutral',lastEmotion='',until=0,frame=0,previous=0,activity=performance.now(),idleAt=activity+random(4000,8000),blinkAt=activity+random(3000,6000),secondBlink=0,hover=null,pointer=null,gx=0,gy=0,hx=0,hy=0,tilt=0,pulse=0,clicks=0,lastClick=-Infinity,lastPointer=null,lastFast=-Infinity,near=false;
+function set(name,next='reaction',duration=1400,now=performance.now()){
+ emotion=name;state=next;until=now+duration;target=vector(name);button.dataset.emotion=name;button.dataset.state=next;
+ if(motion.matches){current=target.slice();paint(now,0);}
 }
-function gaze(){eyes.setAttribute('transform',`translate(${dx*17} ${dy*13})`);}
-function neutral(){clearTimeout(returnTimer);expression('neutral');}
-function react(name,duration=1400){clearTimeout(returnTimer);expression(name);returnTimer=setTimeout(neutral,duration);}
-function choose(){const choices=names.filter(n=>n!==last);last=choices[Math.floor(Math.random()*choices.length)];return last;}
-function scheduleIdle(){clearTimeout(idleTimer);if(document.hidden||motion.matches)return;idleTimer=setTimeout(()=>{
- if(Date.now()-lastActivity>=30000){clearTimeout(returnTimer);expression('sleepy');}
- else if(state==='neutral'&&!near&&Date.now()-lastActivity>=4000)react(choose(),random(1000,2000));
- scheduleIdle();
- },random(4000,8000));}
-function scheduleBlink(){clearTimeout(blinkTimer);if(document.hidden||motion.matches)return;blinkTimer=setTimeout(()=>{if(state==='neutral')react('blink',140);scheduleBlink();},random(3000,6000));}
-function resetGaze(){cancelAnimationFrame(frame);dx=0;dy=0;near=false;gaze();}
-function activity(){lastActivity=Date.now();if(state==='sleepy')neutral();}
-function lifecycle(){clearTimeout(idleTimer);clearTimeout(blinkTimer);clearTimeout(returnTimer);resetGaze();neutral();lastActivity=Date.now();scheduleIdle();scheduleBlink();}
-if(button&&svg&&face&&eyes&&left&&right&&mouth){
- window.addEventListener('pointermove',event=>{
- activity();if(motion.matches||event.pointerType==='touch')return;
- const x=event.clientX,y=event.clientY;cancelAnimationFrame(frame);
- frame=requestAnimationFrame(()=>{
- const b=svg.getBoundingClientRect(),vx=x-b.left-b.width/2,vy=y-b.top-b.height/2;
- const distance=Math.hypot(vx,vy),wasNear=near;near=distance<b.width*.75;
- dx=distance<18?0:Math.max(-1,Math.min(1,vx/Math.max(80,b.width*1.5)));
- dy=distance<18?0:Math.max(-1,Math.min(1,vy/Math.max(80,b.width*1.5)));
- gaze();if(near&&!wasNear&&state==='neutral')react('curious');
- });
- },{passive:true});
- button.addEventListener('click',()=>{activity();react(choose(),1500);});
- document.documentElement.addEventListener('pointerleave',resetGaze);
- window.addEventListener('blur',resetGaze);
- document.addEventListener('visibilitychange',lifecycle);
- motion.addEventListener('change',lifecycle);
- fine.addEventListener('change',resetGaze);
- lifecycle();
+function choose(){const a=names.filter(n=>n!==lastEmotion);return lastEmotion=a[Math.floor(Math.random()*a.length)];}
+function paint(now,dt){
+ const k=motion.matches?1:1-Math.exp(-dt/55);
+ current=current.map((v,i)=>v+(target[i]-v)*k);
+ for(const [el,x,offset] of [[left,81,0],[right,159,5]]){
+  const [w,h,c,s,o]=current.slice(offset,offset+5);
+  el.setAttribute('d',`M${x-w} ${79-h+o}Q${x} ${79+c+o} ${x+w} ${79+h+o}`);
+  el.setAttribute('stroke-width',s);el.setAttribute('opacity',1-current[12]);
+ }
+ hearts.setAttribute('opacity',current[12]);
+ const smile=current[10],open=current[11];
+ mouth.setAttribute('d',`M${112+open*2} ${119-open*4}Q120 ${119+smile+open*13} ${128-open*2} ${119-open*4}Q120 ${119+smile-open*8} ${112+open*2} ${119-open*4}Z`);
+ mouth.setAttribute('fill-opacity',open);
+ let aim=pointer;
+ if(hover){const b=hover.el.getBoundingClientRect();aim={x:b.left+b.width/2,y:b.top+b.height/2};}
+ let tx=0,ty=0;
+ if(aim&&state!=='sleeping'&&!motion.matches){const b=svg.getBoundingClientRect();tx=clamp((aim.x-b.left-b.width/2)/Math.max(75,b.width*1.25),-1,1);ty=clamp((aim.y-b.top-b.height/2)/Math.max(75,b.width*1.25),-1,1);}
+ const ek=1-Math.exp(-dt/65),hk=1-Math.exp(-dt/150);
+ gx+=(tx*14-gx)*ek;gy+=(ty*10-gy)*ek;hx+=(tx*3-hx)*hk;hy+=(ty*2-hy)*hk;tilt+=(tx*4-tilt)*hk;
+ if(motion.matches)gx=gy=hx=hy=tilt=0;
+ eyes.setAttribute('transform',`translate(${gx} ${gy})`);
+ hearts.setAttribute('transform',`translate(${gx} ${gy})`);
+ const breathe=motion.matches?0:Math.sin(now/1000)*1.8;
+ pulse*=Math.exp(-dt/170);
+ const squash=motion.matches?0:Math.sin(pulse*Math.PI)*.09;
+ head.setAttribute('transform',`translate(${hx} ${hy+breathe}) rotate(${tilt} 120 90) translate(120 90) scale(${1+squash} ${1-squash}) translate(-120 -90)`);
+ sleep.setAttribute('opacity',state==='sleeping'?'0.85':'0');
+}
+function resume(now){activity=now;idleAt=now+random(4000,8000);if(state==='sleeping'){set('happy','reaction',1000,now);}}
+function normal(now){set('neutral',pointer?'tracking':'idle',Infinity,now);}
+function tick(now){
+ frame=0;if(document.hidden||motion.matches)return;
+ const dt=Math.min(50,Math.max(1,now-(previous||now-16)));previous=now;
+ if(hover){if(emotion!==hover.name)set(hover.name,'context',Infinity,now);}
+ else if(state==='context')normal(now);
+ else if(now-activity>=30000&&state!=='sleeping')set('sleepy','sleeping',Infinity,now);
+ else if(state==='reaction'&&now>=until)normal(now);
+ else if(['idle','tracking'].includes(state)){
+  if(now>=idleAt&&now-activity>=4000){set(choose(),'reaction',random(1000,2000),now);idleAt=now+random(4000,8000);}
+  else if(now>=blinkAt||secondBlink&&now>=secondBlink){const second=!!secondBlink;secondBlink=0;set('blink','reaction',110,now);blinkAt=now+random(3000,6000);if(!second&&Math.random()<.25)secondBlink=now+310;}
+ }
+ paint(now,dt);frame=requestAnimationFrame(tick);
+}
+function start(){cancelAnimationFrame(frame);frame=0;previous=0;if(!document.hidden&&!motion.matches)frame=requestAnimationFrame(tick);}
+function ripple(){if(motion.matches)return;const b=svg.getBoundingClientRect();window.dispatchEvent(new CustomEvent('mascot:ripple',{detail:{x:b.left+b.width/2,y:b.top+b.height/2}}));}
+window.addEventListener('pointermove',e=>{
+ if(e.pointerType==='touch'||motion.matches)return;
+ const now=performance.now();resume(now);pointer={x:e.clientX,y:e.clientY};
+ const b=svg.getBoundingClientRect(),close=Math.hypot(e.clientX-b.left-b.width/2,e.clientY-b.top-b.height/2)<b.width*.65;
+ if(!hover&&['idle','tracking'].includes(state)){
+  if(lastPointer&&now-lastPointer.t>0&&now-lastPointer.t<100&&Math.hypot(e.clientX-lastPointer.x,e.clientY-lastPointer.y)/(now-lastPointer.t)>2.5&&now-lastFast>3500){lastFast=now;set('surprised','reaction',850,now);}
+  else if(close&&!near)set('curious','reaction',900,now);
+ }
+ near=close;lastPointer={...pointer,t:now};
+},{passive:true});
+function clearPointer(){pointer=null;near=false;lastPointer=null;}
+document.documentElement.addEventListener('pointerleave',clearPointer);window.addEventListener('blur',clearPointer);
+button.addEventListener('click',()=>{const now=performance.now();resume(now);clicks=now-lastClick<700?clicks+1:1;lastClick=now;pulse=1;set(clicks>=3?(clicks%2?'confused':'angry'):choose(),'reaction',1400,now);ripple();if(motion.matches){clearTimeout(reducedTimer);reducedTimer=setTimeout(()=>normal(performance.now()),1400);}});
+let reducedTimer;
+const contexts=[['.contact','excited'],['.social','curious'],['.hero h1','curious']];
+for(const [selector,name] of contexts){const el=document.querySelector(selector);if(!el)continue;let inside=false,focused=false;
+ function update(){const now=performance.now();if(inside||focused){resume(now);hover={el,name};set(name,'context',Infinity,now);}else if(hover?.el===el){hover=null;normal(now);}}
+ el.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch'){inside=true;update();}});el.addEventListener('pointerleave',()=>{inside=false;update();});
+ if(selector!=='.hero h1'){el.addEventListener('focus',()=>{focused=true;update();});el.addEventListener('blur',()=>{focused=false;update();});}
+}
+function reset(){cancelAnimationFrame(frame);clearTimeout(reducedTimer);hover=null;clearPointer();const now=performance.now();activity=now;idleAt=now+random(4000,8000);blinkAt=now+random(3000,6000);secondBlink=0;normal(now);start();}
+document.addEventListener('visibilitychange',reset);motion.addEventListener('change',reset);
+set(motion.matches?'neutral':'happy',motion.matches?'idle':'reaction',1200);start();
 }

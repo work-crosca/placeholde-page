@@ -74,3 +74,7 @@ Original SVG head only, no reflection line, no body. Seven random emotions plus 
 ## ASCII background
 
 An original procedural wave field of ASCII characters is drawn on a decorative canvas, fading toward the text. It runs at about 15 FPS, caps device pixel ratio, pauses in hidden tabs and renders a static frame for reduced motion. No pointer events or external assets. Set SITE_ASCII_BACKGROUND=false to disable it entirely.
+
+### Animation controller
+
+Parametric SVG expressions interpolate in one animation loop. Eyes lead the head, with inertial tracking, breathing, click squash, occasional double blink, 12 emotions, idle and sleeping states. CTA hover/focus holds excitement; Telegram hover/focus holds curiosity; title hover holds curiosity. Context reactions take priority over idle reactions. Click emits a decorative ASCII ripple when enabled. Reduced motion disables autonomous animation and tracking; explicit reactions remain available. Hidden tabs stop the animation loop.
