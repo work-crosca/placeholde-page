@@ -1,6 +1,6 @@
 # Placeholder Page
 
-A reusable coming-soon / maintenance page for MIRCO projects. Full-screen charcoal canvas, iridescent oversized typography and an original head-only SVG robot with nine-direction gaze and spontaneous emotions. Mascotry and page-mascot inspired the interaction concept only; no code, sprites, assets or dependencies from either project are used.
+A reusable coming-soon / maintenance page for MIRCO projects. Full-screen charcoal canvas, iridescent oversized typography and an original head-only SVG robot with smooth pointer gaze and spontaneous emotions. Mascotry and page-mascot inspired the interaction concept only; no code, sprites, assets or dependencies from either project are used.
 
 ## Quick start
 
@@ -30,6 +30,7 @@ All options are runtime environment variables, so one image can serve multiple d
 | SITE_EMAIL | empty | Optional contact mailto link |
 | SITE_URL | empty | Public origin (e.g. https://example.mirco.uk), for absolute social preview URLs |
 | SITE_TELEGRAM | empty | Telegram username without @; hides the icon when unset or invalid |
+| SITE_ASCII_BACKGROUND | true | Set false to disable the animated decorative ASCII background |
 | SITE_MASCOT | true | Set false to hide mascot |
 
 ## Coolify
@@ -68,4 +69,8 @@ Favicon SVG/ICO, PNG favicons, Apple touch icon and `public/images/social/mirco.
 
 ## Robot mascot
 
-Original SVG head only, no reflection line, no body. Seven random emotions plus neutral and blink. Idle expressions appear after 4–8 seconds of inactivity, last 1–2 seconds; after 30 seconds the robot sleeps until activity resumes. Clicking or tapping triggers a random expression without consecutive repeats. Fine pointers move the facial features in nine directions. Reduced motion disables autonomous changes and gaze, while intentional button interaction remains available. No sprite sheets or additional dependencies are needed.
+Original SVG head only, no reflection line, no body. Seven random emotions plus neutral and blink. Idle expressions appear after 4–8 seconds of inactivity, last 1–2 seconds; after 30 seconds the robot sleeps until activity resumes. Clicking or tapping triggers a random expression without consecutive repeats. Mouse pointers move the eyes smoothly.  Reduced motion disables autonomous changes and gaze, while intentional button interaction remains available. No sprite sheets or additional dependencies are needed.
+
+## ASCII background
+
+An original procedural wave field of ASCII characters is drawn on a decorative canvas, fading toward the text. It runs at about 15 FPS, caps device pixel ratio, pauses in hidden tabs and renders a static frame for reduced motion. No pointer events or external assets. Set SITE_ASCII_BACKGROUND=false to disable it entirely.

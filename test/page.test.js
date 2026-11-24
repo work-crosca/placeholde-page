@@ -11,3 +11,5 @@ test('Telegram only with valid username',()=>{const html=render(config({SITE_TEL
 test('shared brand metadata',()=>{const html=render(config({SITE_URL:'https://example.mirco.uk'}));assert.ok(html.includes('content="https://example.mirco.uk/images/social/mirco.png"'));assert.ok(html.includes('name="twitter:card"'));assert.ok(html.includes('href="/favicon.ico"'));assert.ok(html.includes('href="/apple-touch-icon.png"'));assert.equal(config({SITE_URL:'javascript:alert(1)'}).origin,'');});
 
 test('head-only interactive mascot',()=>{const html=render(config());assert.match(html,/button type="button" class="mascot"/);assert.match(html,/id="eye-left"/);assert.match(html,/id="eye-right"/);assert.match(html,/id="mouth"/);assert.ok(!render(config({SITE_MASCOT:'false'})).includes('class="mascot"'));});
+
+test('optional ASCII background',()=>{assert.match(render(config()),/id="ascii-background"/);assert.match(render(config()),/ascii-background\.js/);const html=render(config({SITE_ASCII_BACKGROUND:'false'}));assert.ok(!html.includes('id="ascii-background"'));assert.ok(!html.includes('ascii-background.js'));});
