@@ -31,7 +31,7 @@ function expression(name){
  mouth.setAttribute('d',name==='surprised'?'M120 110a7 9 0 1 0 0 18a7 9 0 1 0 0 -18': ['happy','love'].includes(name)?'M109 113Q120 128 131 113':name==='confused'?'M111 120Q116 113 121 119T131 116':'M115 119H125');
  mouth.setAttribute('fill',name==='surprised'?'#9fd8ff':'none');
 }
-function gaze(){face.setAttribute('transform',`translate(${dx*8} ${dy*6})`);}
+function gaze(){eyes.setAttribute('transform',`translate(${dx*17} ${dy*13})`);}
 function neutral(){clearTimeout(returnTimer);expression('neutral');}
 function react(name,duration=1400){clearTimeout(returnTimer);expression(name);returnTimer=setTimeout(neutral,duration);}
 function choose(){const choices=names.filter(n=>n!==last);last=choices[Math.floor(Math.random()*choices.length)];return last;}
@@ -46,13 +46,13 @@ function activity(){lastActivity=Date.now();if(state==='sleepy')neutral();}
 function lifecycle(){clearTimeout(idleTimer);clearTimeout(blinkTimer);clearTimeout(returnTimer);resetGaze();neutral();lastActivity=Date.now();scheduleIdle();scheduleBlink();}
 if(button&&svg&&face&&eyes&&left&&right&&mouth){
  window.addEventListener('pointermove',event=>{
- activity();if(motion.matches||!fine.matches||event.pointerType==='touch')return;
+ activity();if(motion.matches||event.pointerType==='touch')return;
  const x=event.clientX,y=event.clientY;cancelAnimationFrame(frame);
  frame=requestAnimationFrame(()=>{
  const b=svg.getBoundingClientRect(),vx=x-b.left-b.width/2,vy=y-b.top-b.height/2;
  const distance=Math.hypot(vx,vy),wasNear=near;near=distance<b.width*.75;
- dx=distance<18?0:Math.abs(vx/distance)<.38?0:Math.sign(vx);
- dy=distance<18?0:Math.abs(vy/distance)<.38?0:Math.sign(vy);
+ dx=distance<18?0:Math.max(-1,Math.min(1,vx/Math.max(80,b.width*1.5)));
+ dy=distance<18?0:Math.max(-1,Math.min(1,vy/Math.max(80,b.width*1.5)));
  gaze();if(near&&!wasNear&&state==='neutral')react('curious');
  });
  },{passive:true});
