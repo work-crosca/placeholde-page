@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {config,render} from '../src/page.js';
+import {config,render,manifest} from '../src/page.js';
 test('defaults',()=>{assert.equal(config().mode,'soon');assert.match(render(config()),/Coming soon/);});
 test('Romanian maintenance',()=>{const c=config({SITE_LANGUAGE:'ro',SITE_MODE:'maintenance'});assert.equal(c.title,'Revenim curând.');assert.match(render(c),/lang="ro"/);});
 test('safe text and contact',()=>{const html=render(config({SITE_NAME:'<script>alert(1)</script>',SITE_EMAIL:'javascript:bad',SITE_MASCOT:'false'}));assert.ok(!html.includes('<script>alert'));assert.ok(!html.includes('mailto:'));assert.ok(!html.includes('id="mascot"'));});
@@ -19,3 +19,5 @@ test('animated face layers',()=>{const html=render(config());assert.match(html,/
 test('header uses original brand mark',()=>{const html=render(config());assert.match(html,/<img src="\/images\/brand\/mark\.svg" width="48" height="28" alt="MIRCO"/);assert.ok(!html.includes('<span class="brand">MIRCO</span>'));});
 
 test('contact uses SVG arrow icon',()=>{const html=render(config({SITE_EMAIL:'hello@example.com'}));assert.match(html,/<a class="contact"[^>]*>[^<]*<svg/);assert.ok(!html.includes('>↗<'));});
+
+test('runtime manifest and metadata',()=>{const c=config({SITE_NAME:'Example',SITE_LANGUAGE:'ro'});const m=manifest(c);assert.equal(m.name,'Example');assert.equal(m.lang,'ro');assert.equal(m.start_url,'/');assert.equal(m.display,'browser');assert.equal(m.icons.length,3);assert.ok(m.icons.some(i=>i.purpose==='maskable'));const html=render(c);assert.match(html,/rel="manifest" href="\/manifest\.webmanifest"/);assert.match(html,/name="theme-color" content="#191717"/);assert.match(html,/property="og:locale" content="ro_RO"/);assert.ok(html.includes('https://mirco.uk/images/social/mirco.png'));});
