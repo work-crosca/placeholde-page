@@ -10,6 +10,11 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test",
-    "build": "node --check server.js && node --check public/mascot.js"
+    "build": "node --check server.js && node --check public/mascot.js && node --check src/page.js"
+  },
+  "dependencies": {
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-icons": "5.5.0"
   }
 }

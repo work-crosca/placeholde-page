@@ -1,12 +1,13 @@
 # Placeholder Page
 
-A reusable coming-soon / maintenance page for MIRCO projects. Dark canvas, mint surround, oversized typography and an original SVG robot whose eyes follow the pointer. Mascotry inspired the interaction concept only; no code, sprites, assets or dependency from that project are used.
+A reusable coming-soon / maintenance page for MIRCO projects. Full-screen charcoal canvas, iridescent oversized typography and an original SVG robot whose eyes follow the pointer. Mascotry inspired the interaction concept only; no code, sprites, assets or dependency from that project are used.
 
 ## Quick start
 
-Requires Node.js 22+. No third-party packages, database or build step required.
+Requires Node.js 22+. React and React Icons are used only to render the Telegram SVG on the server. No database or browser React bundle required.
 
 ```sh
+npm install
 npm start
 npm test
 npm run build
@@ -27,6 +28,7 @@ All options are runtime environment variables, so one image can serve multiple d
 | SITE_TITLE | localized | Optional custom headline |
 | SITE_DESCRIPTION | localized | Optional custom description |
 | SITE_EMAIL | empty | Optional contact mailto link |
+| SITE_TELEGRAM | empty | Telegram username without @; hides the icon when unset or invalid |
 | SITE_MASCOT | true | Set false to hide mascot |
 
 ## Coolify
@@ -49,7 +51,7 @@ Alternatively: `docker build -t placeholder-page .` then `docker run --rm -p 300
 - / returns 200 in coming-soon mode, 503 with Retry-After in maintenance.
 - /health returns 200; unknown paths return 404.
 - robots.txt and noindex prevent indexing of temporary content. Remove these restrictions when replacing the placeholder with the actual website.
-- No analytics, tracking, fake countdown, newsletter or external assets.
+- No analytics, tracking, fake countdown, newsletter or external assets. Telegram is the only social link; set SITE_TELEGRAM to display it.
 
 ## Verification
 
@@ -57,4 +59,4 @@ Run npm test and npm run build. For manual QA, inspect at 320, 768 and 1440px; v
 
 ## Design decisions
 
-Vanilla HTML/CSS/JS plus Node HTTP rather than Next.js/Tailwind: a temporary page needs no framework or dependency downloads. Typography and colors are inspired by the supplied visual reference; the robot is independently drawn. The optional contact link opens an email client rather than pretending to collect subscriptions. No license is assigned automatically; repository owner can select one.
+Vanilla HTML/CSS/JS plus Node HTTP rather than Next.js/Tailwind: a temporary page needs no full client framework; React Icons is rendered server-side. Typography and colors are inspired by the supplied visual reference; the robot is independently drawn. The optional contact link opens an email client rather than pretending to collect subscriptions. No license is assigned automatically; repository owner can select one.
