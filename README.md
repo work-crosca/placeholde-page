@@ -1,6 +1,6 @@
 # Placeholder Page
 
-A reusable coming-soon / maintenance page for MIRCO projects. Full-screen charcoal canvas, iridescent oversized typography and an original SVG robot whose eyes follow the pointer. Mascotry inspired the interaction concept only; no code, sprites, assets or dependency from that project are used.
+A reusable coming-soon / maintenance page for MIRCO projects. Full-screen charcoal canvas, iridescent oversized typography and an original head-only SVG robot with nine-direction gaze and spontaneous emotions. Mascotry and page-mascot inspired the interaction concept only; no code, sprites, assets or dependencies from either project are used.
 
 ## Quick start
 
@@ -48,7 +48,7 @@ Alternatively: `docker build -t placeholder-page .` then `docker run --rm -p 300
 - server.js: HTTP server, explicit asset allowlist, security headers and status codes.
 - src/page.js: localization, configuration, escaped HTML and original SVG.
 - public/style.css: responsive layout, reduced-motion support, blinking.
-- public/mascot.js: bounded pointer tracking, requestAnimationFrame, neutral reset and touch fallback.
+- public/mascot.js: nine-direction gaze, random click and idle expressions, randomized blinking, sleepy state after 30 seconds, visibility-aware timers and reduced-motion support.
 - / returns 200 in coming-soon mode, 503 with Retry-After in maintenance.
 - /health returns 200; unknown paths return 404.
 - robots.txt and noindex prevent indexing of temporary content. Remove these restrictions when replacing the placeholder with the actual website.
@@ -65,3 +65,7 @@ Vanilla HTML/CSS/JS plus Node HTTP rather than Next.js/Tailwind: a temporary pag
 ## Brand assets and social previews
 
 Favicon SVG/ICO, PNG favicons, Apple touch icon and `public/images/social/mirco.png` are exact copies from `work-crosca/mirco.uk` commit `225d47aa2c7738702473429c40c43804be627ef4`. Open Graph and Twitter use the shared 1200 × 630 image with the placeholder's localized title and description. Set SITE_URL to the public origin for absolute preview URLs. Existing noindex policy is unchanged.
+
+## Robot mascot
+
+Original SVG head only, no reflection line, no body. Seven random emotions plus neutral and blink. Idle expressions appear after 4–8 seconds of inactivity, last 1–2 seconds; after 30 seconds the robot sleeps until activity resumes. Clicking or tapping triggers a random expression without consecutive repeats. Fine pointers move the facial features in nine directions. Reduced motion disables autonomous changes and gaze, while intentional button interaction remains available. No sprite sheets or additional dependencies are needed.
