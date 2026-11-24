@@ -17,3 +17,5 @@ test('optional ASCII background',()=>{assert.match(render(config()),/id="ascii-b
 test('animated face layers',()=>{const html=render(config());assert.match(html,/id="hearts"/);assert.match(html,/id="sleep-symbols"/);assert.match(html,/mascot\.js\?v=robot-4/);});
 
 test('header uses original brand mark',()=>{const html=render(config());assert.match(html,/<img src="\/images\/brand\/mark\.svg" width="48" height="28" alt="MIRCO"/);assert.ok(!html.includes('<span class="brand">MIRCO</span>'));});
+
+test('contact uses SVG arrow icon',()=>{const html=render(config({SITE_EMAIL:'hello@example.com'}));assert.match(html,/<a class="contact"[^>]*>[^<]*<svg/);assert.ok(!html.includes('>↗<'));});
