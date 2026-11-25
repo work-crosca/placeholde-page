@@ -34,6 +34,6 @@ if(typeof document!=='undefined'){
  if(wrapper){
   const phrases=JSON.parse(wrapper.dataset.typewriter);
   const node=wrapper.querySelector('.typewriter-text');
-  if(node)createTypewriter({node,phrases,motion:matchMedia('(prefers-reduced-motion: reduce)'),document,setTimer:(fn,ms)=>window.setTimeout(fn,ms),clearTimer:id=>window.clearTimeout(id)});
+  if(node&&window.getComputedStyle(wrapper).display==='grid')createTypewriter({node,phrases,motion:matchMedia('(prefers-reduced-motion: reduce)'),document,setTimer:(fn,ms)=>window.setTimeout(fn,ms),clearTimer:id=>window.clearTimeout(id)});
  }
 }
