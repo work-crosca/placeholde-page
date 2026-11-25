@@ -1,3 +1,4 @@
+import {motion as sharedMotion} from './motion-preference.js';
 // Brief, low-amplitude digital distortion. Decorative copies are hidden unless active.
 export function createGlitchController({title,layers=[],motion,document:doc,setTimer,clearTimer,random=Math.random}){
  let timer=null, first=true;
@@ -29,6 +30,6 @@ if(typeof document!=='undefined'){
  const title=document.querySelector('.hero h1');
  if(title&&window.getComputedStyle(title).getPropertyValue('--title-glitch-ready').trim()==='1'){
   const layers=[...title.querySelectorAll('.title-glitch-layer')];
-  if(layers.length===2)createGlitchController({title,layers,motion:matchMedia('(prefers-reduced-motion: reduce)'),document,setTimer:(fn,ms)=>window.setTimeout(fn,ms),clearTimer:id=>window.clearTimeout(id)});
+  if(layers.length===2)createGlitchController({title,layers,motion:sharedMotion,document,setTimer:(fn,ms)=>window.setTimeout(fn,ms),clearTimer:id=>window.clearTimeout(id)});
  }
 }

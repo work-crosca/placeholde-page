@@ -1,6 +1,6 @@
+import {motion} from './motion-preference.js';
 // Decorative ASCII field: original procedural waves, no external dependencies.
 const canvas=document.querySelector('#ascii-background');
-const motion=matchMedia('(prefers-reduced-motion: reduce)');
 if(canvas){
  const ctx=canvas.getContext('2d');
  if(ctx){

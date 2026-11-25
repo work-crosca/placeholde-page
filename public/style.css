@@ -63,3 +63,15 @@ button,input,select,textarea{font-family:inherit}
 /* Keep selected copy legible against the dark MIRCO palette. */
 ::selection{background:#9fd8ff;color:#191717;text-shadow:none;-webkit-text-fill-color:#191717}
 .title-text::selection{-webkit-text-fill-color:#191717;color:#191717;background-color:#9fd8ff}
+
+/* Manual pause shares the same visual rules as the OS preference. */
+html[data-motion-paused="true"] *,html[data-motion-paused="true"] *::before,html[data-motion-paused="true"] *::after{animation:none!important;transition:none!important}
+html[data-motion-paused="true"] .title-glitch-layer{display:none!important}
+html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
+.mascot[data-placement="hidden"]{visibility:hidden;pointer-events:none}
+.motion-toggle{display:grid;place-items:center;width:44px;height:44px;margin-left:auto;padding:0;border:0;background:transparent;color:#a4bdd8;cursor:pointer}
+.motion-toggle[hidden],.motion-toggle [hidden]{display:none}
+.motion-toggle:hover{color:#b9e7ff}
+.motion-toggle:focus-visible{outline:2px solid #9fd8ff;outline-offset:3px;border-radius:8px}
+.motion-toggle[data-paused="true"] .motion-pause-icon,.motion-toggle:not([data-paused="true"]) .motion-play-icon{display:none}
+.motion-toggle+.social{margin-left:0}

@@ -1,3 +1,4 @@
+import {motion} from './motion-preference.js';
 // A lightweight, accessible desktop context menu for the placeholder page.
 const menu = document.querySelector('#custom-context-menu');
 const toast = document.querySelector('#context-menu-toast');
@@ -49,7 +50,7 @@ if (menu && toast) {
   });
 
   document.addEventListener('keydown', (event) => {
-    if ((event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) && !editable(event.target) && !nativeMenu(event.target) && styled()) {
+    if ((event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) && !editable(event.target) && !nativeMenu(event.target) && !window.getSelection()?.toString().trim() && styled()) {
       event.preventDefault();
       const focused = document.activeElement;
       const bounds = focused && focused !== document.body ? focused.getBoundingClientRect() : null;
@@ -61,7 +62,7 @@ if (menu && toast) {
       event.preventDefault();
       close(true);
     } else if (event.key === 'Tab') {
-      close();
+      close(true);
     } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
       event.preventDefault();
       const index = items.indexOf(document.activeElement);
@@ -76,7 +77,9 @@ if (menu && toast) {
     const action = event.target.closest('button[data-action]')?.dataset.action;
     if (!action) return;
     close(true);
-    if (action === 'refresh') {
+    if (action === 'motion') {
+      motion.toggle();
+    } else if (action === 'refresh') {
       window.location.reload();
     } else if (action === 'soon') {
       window.clearTimeout(toastTimer);
@@ -93,3 +96,19 @@ if (menu && toast) {
   window.addEventListener('blur', () => close());
   document.addEventListener('visibilitychange', () => { if (document.hidden) close(); });
 }
+
+const motionControls=[...document.querySelectorAll('[data-motion-toggle]')];
+function updateMotionControls(){
+ for(const control of motionControls){
+  const label=motion.manualPaused?control.dataset.resume:control.dataset.pause;
+  const text=control.querySelector('[data-motion-label]');
+  if(text)text.textContent=label;
+  control.setAttribute('aria-label',label);
+  control.title=label;
+  control.dataset.paused=String(motion.manualPaused);
+  if(control.dataset.motionToggle==='standalone')control.hidden=false;
+ }
+}
+for(const control of motionControls)if(control.dataset.motionToggle==='standalone')control.addEventListener('click',()=>motion.toggle());
+motion.addEventListener('change',updateMotionControls);
+updateMotionControls();
