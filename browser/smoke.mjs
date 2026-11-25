@@ -115,25 +115,34 @@ try{
    await terminal.locator('input').fill('retro');
    await terminal.locator('input').press('Enter');
    assert.equal(await page.locator('html').evaluate(el=>el.classList.contains('mirco-retro')),true);
-   assert.match(await page.locator('.hero h1').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-warp/);
+   assert.match(await page.locator('.hero h1').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-title/);
+   assert.match(await terminal.locator('.terminal-output').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-terminal/);
+   const optics=await page.evaluate(()=>{
+    const targets=[['.hero h1','mirco-crt-title'],['.hero .description','mirco-crt-description'],['.terminal-output','mirco-crt-terminal']];
+    return targets.map(([selector,id])=>{
+     const box=document.querySelector(selector).getBoundingClientRect(),filter=document.getElementById(id),image=filter.querySelector('feImage');
+     const reference=id==='mirco-crt-terminal'?document.querySelector('.mirco-terminal').getBoundingClientRect():{left:0,top:0,width:document.documentElement.clientWidth,height:document.documentElement.clientHeight};
+     return {units:filter.getAttribute('primitiveUnits'),x:box.left+Number(image.getAttribute('x'))-reference.left,y:box.top+Number(image.getAttribute('y'))-reference.top,width:Number(image.getAttribute('width'))-reference.width,scale:Number(filter.querySelector('feDisplacementMap').getAttribute('scale')),pad:Number(filter.getAttribute('x'))};
+    });
+   });
+   for(const item of optics){assert.equal(item.units,'userSpaceOnUse');assert.ok(Math.abs(item.x)<2&&Math.abs(item.y)<2&&Math.abs(item.width)<2);assert.ok(item.scale>0&&item.scale<=32&&item.pad<=-item.scale/2);}
+   assert.ok(optics[2].scale<=10);
+   assert.equal(await terminal.locator('input').evaluate(el=>getComputedStyle(el).filter),'none');
+   assert.equal(await page.locator('.shell').evaluate(el=>getComputedStyle(el,'::after').borderRadius),'0px');
    assert.equal(await page.locator('.contact').evaluate(el=>getComputedStyle(el).filter),'none');
    assert.equal((await page.request.get(origin+'/icons/crt-displacement.png')).status(),200);
    await page.keyboard.press('Escape');
    await terminal.waitFor({state:'hidden'});
    if(viewport.width===1440){
-    // An isolated stationary stripe probe verifies actual rendered pixel displacement.
-    await page.evaluate(()=>{
-     const probe=document.createElement('div');probe.id='crt-pixel-probe';
-     Object.assign(probe.style,{position:'fixed',left:'30px',top:'30px',width:'260px',height:'160px',background:'repeating-linear-gradient(0deg,#fff 0 8px,#000 8px 16px)',zIndex:'1000',pointerEvents:'none'});
-     document.body.append(probe);
-    });
-    const probe=page.locator('#crt-pixel-probe');
-    const flat=await probe.screenshot({animations:'disabled'});
-    await probe.evaluate(el=>{el.style.filter='url("#mirco-crt-warp")';});
-    await page.waitForFunction(()=>getComputedStyle(document.querySelector('#crt-pixel-probe')).filter!=='none');
-    const warped=await probe.screenshot({animations:'disabled'});
-    assert.notDeepEqual(flat,warped,'CRT must change rendered pixels, not merely CSS state');
-    await probe.evaluate(el=>el.remove());
+    // Freeze motion, compare the actual heading with and without the CRT filter.
+    await page.locator('.motion-toggle').click();
+    const heading=page.locator('.hero h1');
+    const warped=await heading.screenshot({animations:'disabled'});
+    await heading.evaluate(el=>{el.style.filter='none';});
+    const flat=await heading.screenshot({animations:'disabled'});
+    assert.notDeepEqual(flat,warped,'CRT must change heading pixels');
+    await heading.evaluate(el=>el.style.removeProperty('filter'));
+    await page.locator('.motion-toggle').click();
    }
    await page.keyboard.press('Control+Shift+K');
    await terminal.locator('input').fill('retro');

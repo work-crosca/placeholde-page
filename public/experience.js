@@ -1,4 +1,5 @@
 import {motion} from './motion-preference.js';
+import './crt.js';
 import {commands,logo,createHistory,complete,formatUptime} from './terminal-core.js';
 const lang=document.documentElement.lang;
 const copy={
@@ -67,7 +68,7 @@ function fetchInfo(){
  info.append(palette);const divider=element('div','terminal-fetch-divider');divider.setAttribute('aria-hidden','true');banner.append(art,divider,info);append(banner);
 }
 function boot(){output.replaceChildren();fetchInfo();line(copy.intro,'terminal-hint');output.scrollTop=0;booted=true;}
-function open(){if(dialog.open)return;previousFocus=document.activeElement;dialog.showModal();if(!booted)boot();input.focus();}
+function open(){if(dialog.open)return;previousFocus=document.activeElement;dialog.showModal();if(!booted)boot();input.focus();window.dispatchEvent(new Event('mirco:crt-layout'));}
 close.addEventListener('click',()=>dialog.close());
 minimize.addEventListener('click',()=>dialog.close());
 maximize.addEventListener('click',()=>{
@@ -76,6 +77,7 @@ maximize.addEventListener('click',()=>{
  const label=expanded?windowLabels.restore:windowLabels.maximize;
  maximize.setAttribute('aria-label',label);maximize.title=label;
  maximize.firstElementChild.textContent=expanded?'↙':'↗';
+ window.dispatchEvent(new Event('mirco:crt-layout'));
 });
 dialog.addEventListener('close',()=>{if(previousFocus instanceof HTMLElement&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});});
 const celebrate=()=>window.dispatchEvent(new Event('mirco:celebrate'));
