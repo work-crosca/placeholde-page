@@ -5,8 +5,13 @@ if(canvas){
  const ctx=canvas.getContext('2d');
  if(ctx){
  const glyphs=' .:+*#@';
- let ripples=[];
- window.addEventListener("mascot:ripple",e=>{if(motion.matches||document.hidden)return;const b=canvas.getBoundingClientRect();ripples.push({x:e.detail.x-b.left,y:e.detail.y-b.top,t:performance.now()});ripples=ripples.slice(-4);});
+ let ripples=[],pointer=null;
+ function addRipple(x,y){if(motion.matches||document.hidden)return;const b=canvas.getBoundingClientRect();ripples.push({x:x-b.left,y:y-b.top,t:performance.now()});ripples=ripples.slice(-4);}
+ window.addEventListener('pointermove',e=>{if(e.pointerType==='touch'||motion.matches||document.hidden)return;const b=canvas.getBoundingClientRect();pointer={x:e.clientX-b.left,y:e.clientY-b.top};},{passive:true});
+ window.addEventListener('pointerout',e=>{if(!e.relatedTarget)pointer=null;},{passive:true});
+ window.addEventListener('blur',()=>{pointer=null;});
+ window.addEventListener('click',e=>{if(e.detail&& !e.target.closest('button,a,input,dialog'))addRipple(e.clientX,e.clientY);});
+ window.addEventListener('mascot:ripple',e=>addRipple(e.detail.x,e.detail.y));
  let width=0,height=0,stepX=17,stepY=22,frame=0,last=-Infinity;
  function resize(){
   const bounds=canvas.getBoundingClientRect();
@@ -29,11 +34,14 @@ if(canvas){
     const density=Math.max(0,Math.min(1,(wave+.45)/2.55));
     let ripple=0;
      for(const r of ripples){const age=time-r.t;ripple=Math.max(ripple,Math.max(0,1-Math.abs(Math.hypot(x-r.x,y-r.y)-age*.28)/35)*(1-age/1400));}
-    if(density<.17&&ripple<.08)continue;
+    const dx=pointer?x-pointer.x:0,dy=pointer?y-pointer.y:0;
+    const distance=pointer?Math.hypot(dx,dy):Infinity;
+    const proximity=Math.max(0,1-distance/100);
+    if(density<.17&&ripple<.08&&proximity<.1)continue;
     const mask=.16+.84*Math.pow(u,1.7);
-    const alpha=Math.min(.65,(.045+.17*density)*mask+ripple*.5);
+    const alpha=Math.min(.65,(.045+.17*density)*mask+ripple*.5+proximity*.22);
     ctx.fillStyle='rgba(125,183,255,'+alpha.toFixed(3)+')';
-    ctx.fillText(glyphs[Math.min(glyphs.length-1,Math.floor(density*glyphs.length))],x,y);
+    ctx.fillText(glyphs[Math.min(glyphs.length-1,Math.floor(Math.max(density,proximity*.7)*glyphs.length))],x+(distance>0&&Number.isFinite(distance)?dx/distance*proximity*8:0),y+(distance>0&&Number.isFinite(distance)?dy/distance*proximity*8:0));
    }
   }
  }
@@ -44,6 +52,7 @@ if(canvas){
  }
  function sync(){
   cancelAnimationFrame(frame);frame=0;last=-Infinity;
+  pointer=null;ripples=[];
   if(document.hidden)return;
   if(motion.matches)draw(0);else frame=requestAnimationFrame(tick);
  }

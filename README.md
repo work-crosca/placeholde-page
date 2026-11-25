@@ -123,3 +123,7 @@ The localized context menu and a small accessible footer control pause/resume al
 ### Circular cursor
 
 On fine-pointer devices with hover, the browser uses a centered, hollow blue circle by default and a filled blue circle for links and enabled buttons. Selectable text and disabled controls retain their native cursors; touch devices are unchanged. The SVG assets are self-hosted and do not require JavaScript.
+
+### Hidden interactive experience
+
+Open the localized terminal through the desktop context menu or Ctrl/Cmd+Shift+K. Commands are local, fixed and non-executable; no shell or network access is exposed. The mascot now has a decaying session-local mood bias, reacts to connection changes and return to the tab, and changes the browser favicon for sustained expressions. The original brand favicon returns for neutral expressions and paused motion. ASCII pointer proximity and click ripples obey the shared motion preference. Hidden interactions include typing mirco, the Konami code (static CRT scanlines), five quick logo clicks and ten quick mascot clicks. No new runtime dependencies or environment settings are needed.
