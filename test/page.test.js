@@ -32,3 +32,5 @@ test('five new facial expressions have dedicated SVG layers',()=>{const html=ren
 test('sleeping mascot has three independently animated Z glyphs',()=>{const html=render(config());for(const id of ['sleep-z1','sleep-z2','sleep-z3'])assert.ok(html.includes('id="'+id+'"'));});
 
 test('decorative title and description layers are hidden by default without CSS',()=>{const html=render(config());assert.match(html,/class="typewriter-measure" aria-hidden="true" hidden/);assert.match(html,/class="typewriter-display" aria-hidden="true" hidden/);assert.match(html,/class="title-glitch-layer title-glitch-upper" aria-hidden="true" hidden/);assert.match(html,/class="title-glitch-layer title-glitch-lower" aria-hidden="true" hidden/);});
+
+test('text selection uses the branded palette, including gradient headings',()=>{const css=readFileSync(new URL('../public/style.css',import.meta.url),'utf8');assert.match(css,/::selection\{background-color:#9fd8ff;color:#121315/);assert.match(css,/\.title-text::selection\{-webkit-text-fill-color:#121315;color:#121315;background-color:#9fd8ff/);});
