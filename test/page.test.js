@@ -30,3 +30,5 @@ test('mascot remains fixed across viewport sizes without reserving hero space',(
 test('five new facial expressions have dedicated SVG layers',()=>{const html=render(config());for(const id of ['tears','spiral-eyes','scared-eyes','wavy-mouth'])assert.ok(html.includes('id="'+id+'"'));});
 
 test('sleeping mascot has three independently animated Z glyphs',()=>{const html=render(config());for(const id of ['sleep-z1','sleep-z2','sleep-z3'])assert.ok(html.includes('id="'+id+'"'));});
+
+test('decorative title and description layers are hidden by default without CSS',()=>{const html=render(config());assert.match(html,/class="typewriter-measure" aria-hidden="true" hidden/);assert.match(html,/class="typewriter-display" aria-hidden="true" hidden/);assert.match(html,/class="title-glitch-layer title-glitch-upper" aria-hidden="true" hidden/);assert.match(html,/class="title-glitch-layer title-glitch-lower" aria-hidden="true" hidden/);});
