@@ -104,9 +104,9 @@ html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
 .mirco-terminal[open]{display:flex;flex-direction:column}
 .mirco-terminal.is-expanded{width:min(1000px,calc(100% - 32px));height:calc(100% - 32px)}
 .mirco-terminal::backdrop{background:rgba(8,12,18,.68)}
-.terminal-header{display:grid;grid-template-columns:88px minmax(0,1fr) 88px;align-items:center;min-height:40px;padding:0 10px;background:#252931;border-bottom:1px solid rgba(0,0,0,.4);flex:none;user-select:none}
+.terminal-header{display:grid;grid-template-columns:66px minmax(0,1fr) 66px;align-items:center;min-height:40px;padding:0 10px;background:#252931;border-bottom:1px solid rgba(0,0,0,.4);flex:none;user-select:none}
 .terminal-window-controls{display:flex;align-items:center;gap:0}
-.terminal-window-button{appearance:none;display:grid;place-items:center;flex:none;width:25px;height:34px;padding:0;border:0;background:transparent;color:#3a1410}
+.terminal-window-button{appearance:none;display:grid;place-items:center;flex:none;width:20px;height:34px;padding:0;border:0;background:transparent;color:#3a1410}
 .terminal-window-dot{display:grid;place-items:center;width:13px;height:13px;border-radius:50%;font:700 11px/1 Arial,sans-serif;color:transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
 .terminal-close .terminal-window-dot{background:#ff5f57}
 .terminal-minimize .terminal-window-dot{background:#febc2e}
@@ -119,15 +119,19 @@ html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
 .terminal-form{display:flex;align-items:center;gap:10px;flex:none;color:#9fd8ff}
 .terminal-run{color:#c4dfff;background:#25384d;border:0;border-radius:7px;padding:9px 12px;font:inherit}
 .terminal-form input{font:inherit;color:#c4dfff;flex:1;min-width:0;background:#0b1018;border:1px solid #293747;border-radius:7px;padding:8px;user-select:text}
-@media(max-width:420px){.terminal-header{grid-template-columns:82px minmax(0,1fr) 82px;padding:0 6px}.terminal-content{padding:12px}.terminal-form{gap:6px}.terminal-run{padding:9px 8px}.terminal-form input{font-size:16px}}
-@media(pointer:coarse){.terminal-header{min-height:48px;grid-template-columns:96px minmax(0,1fr) 96px}.terminal-window-button{width:32px;height:44px}.terminal-window-dot{width:15px;height:15px;color:#35211a}}
+@media(max-width:420px){.terminal-header{grid-template-columns:66px minmax(0,1fr) 66px;padding:0 6px}.terminal-content{padding:12px}.terminal-form{gap:6px}.terminal-run{padding:9px 8px}.terminal-form input{font-size:16px}}
+@media(pointer:coarse){.terminal-header{min-height:48px;grid-template-columns:84px minmax(0,1fr) 84px}.terminal-window-button{width:28px;height:44px}.terminal-window-dot{width:15px;height:15px;color:#35211a}}
 @media(forced-colors:active){.terminal-window-dot{color:ButtonText;background:ButtonFace!important;border:1px solid ButtonText}}
-/* CRT optics affect only the decorative field and non-interactive overlays. */
-.mirco-retro .shell::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:12;border-radius:clamp(18px,3.5vw,52px);background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(120,180,255,.065) 3px 4px),radial-gradient(ellipse at center,transparent 48%,rgba(3,8,17,.30) 82%,rgba(3,8,17,.68) 100%);box-shadow:inset 0 0 20px 3px rgba(0,0,0,.52),inset 0 0 68px rgba(24,68,115,.16)}
-.mirco-retro .shell::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:12;border-radius:clamp(18px,3.5vw,52px);box-shadow:inset 0 0 0 1px rgba(159,216,255,.13);background:repeating-linear-gradient(90deg,rgba(110,160,255,.02) 0 1px,transparent 1px 3px)}
+/* CRT: actual radial image displacement, not just a shift of ASCII glyph centers. */
+.crt-filter-defs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+.mirco-retro{background:#080b11}
+.mirco-retro #ascii-background,.mirco-retro .hero h1,.mirco-retro .hero .description{filter:url("#mirco-crt-warp")}
+.mirco-retro .shell::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:12;border-radius:clamp(24px,5vw,78px)/clamp(24px,7vh,70px);background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(120,180,255,.085) 3px 4px),radial-gradient(ellipse at center,transparent 40%,rgba(3,8,17,.2) 72%,rgba(3,8,17,.62) 94%,rgba(3,8,17,.84) 100%);box-shadow:0 0 0 100vmax #080b11,inset 0 0 0 2px #111b28,inset 0 0 34px 5px rgba(0,0,0,.65)}
+.mirco-retro .shell::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:12;border-radius:clamp(24px,5vw,78px)/clamp(24px,7vh,70px);background:radial-gradient(ellipse at 48% 0%,rgba(159,216,255,.07),transparent 42%),repeating-linear-gradient(90deg,rgba(110,160,255,.025) 0 1px,transparent 1px 3px)}
 .mirco-retro .hero .description,.mirco-retro .terminal-output{text-shadow:0 0 6px rgba(159,216,255,.28)}
 .mirco-retro .hero .title-text{text-shadow:-.5px 0 rgba(125,183,255,.2),.5px 0 rgba(190,135,255,.14)}
 .mirco-retro .mirco-terminal[open]::after{content:"";position:absolute;inset:40px 0 0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(120,180,255,.045) 3px 4px);border-radius:0 0 12px 12px}
+@media(forced-colors:active){.mirco-retro #ascii-background,.mirco-retro .hero h1,.mirco-retro .hero .description{filter:none}}
 .mirco-matrix #ascii-background{mask-image:none;-webkit-mask-image:none;opacity:.72}
 .terminal-fetch{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin:0 0 12px;min-width:0}
 .terminal-logo{position:relative;width:min(100%,330px);color:#9fd8ff;flex:none}

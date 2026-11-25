@@ -3,6 +3,8 @@ import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {render, config, manifest} from './src/page.js';
+import {makeCrtMap} from './src/crt-map.js';
+const crtMap=makeCrtMap();
 const settings=config(process.env);
 const fontAssets=new Map([['/fonts/space-grotesk-latin.woff2','space-grotesk-latin-wght-normal.woff2'],['/fonts/space-grotesk-latin-ext.woff2','space-grotesk-latin-ext-wght-normal.woff2']]);
 const assets=new Map([['/style.css','text/css'],['/experience.js','text/javascript'],['/terminal-core.js','text/javascript'],['/mascot/mood.js','text/javascript'],...['happy','love','angry','sleep'].map(name=>['/icons/mood-'+name+'.svg','image/svg+xml']),['/analytics.js','text/javascript'],['/mascot.js','text/javascript'],['/motion-preference.js','text/javascript'],['/mascot/expressions.js','text/javascript'],['/mascot/placement.js','text/javascript'],['/mascot/renderer.js','text/javascript'],['/context-menu.js','text/javascript'],['/title-glitch.js','text/javascript'],['/description-typewriter.js','text/javascript'],['/ascii-background.js','text/javascript'],['/favicon.svg','image/svg+xml'],['/icons/cursor-idle.svg','image/svg+xml'],['/icons/cursor-pointer.svg','image/svg+xml'],['/images/brand/mark.svg','image/svg+xml'],['/favicon.ico','image/x-icon'],['/apple-touch-icon.png','image/png'],['/icons/favicon-16.png','image/png'],['/icons/favicon-32.png','image/png'],['/icons/favicon-48.png','image/png'],['/icons/icon-192.png','image/png'],['/icons/icon-512.png','image/png'],['/icons/icon-maskable-512.png','image/png'],['/images/social/mirco.png','image/png']]);
@@ -11,6 +13,7 @@ const hash=createHash('sha256');
 for(const path of [...assets.keys()].filter(path=>/\.(css|js|svg)$/.test(path)).sort()){
  hash.update(path);hash.update(await readFile(fileURLToPath(new URL('./public'+path,import.meta.url))));
 }
+hash.update(crtMap);
 const assetVersion=hash.digest('hex').slice(0,16);
 const analyticsPolicy=settings.analyticsId
  ? "script-src 'self' https://www.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; img-src 'self' https://*.google-analytics.com https://*.googletagmanager.com;"
@@ -26,6 +29,7 @@ export const server=http.createServer(async(req,res)=>{
  }catch{return send(400,'text/plain','Bad request');}
  if(!['GET','HEAD'].includes(req.method))return send(405,'text/plain','Method not allowed',{Allow:'GET, HEAD'});
  if(path==='/manifest.webmanifest')return send(200,'application/manifest+json; charset=utf-8',JSON.stringify(manifest(settings)),{'Cache-Control':'no-cache'});
+ if(path==='/icons/crt-displacement.png')return send(200,'image/png',crtMap,{'Cache-Control':'public, max-age=3600'});
  if(path==='/health')return send(200,'application/json','{"status":"ok"}');
  if(fontAssets.has(path)){try{return send(200,'font/woff2',await readFile(fileURLToPath(new URL('./node_modules/@fontsource-variable/space-grotesk/files/'+fontAssets.get(path),import.meta.url))),{'Cache-Control':'public, max-age=3600'});}catch{return send(500,'text/plain','Font unavailable');}}
  if(path==='/style.css'){const body=await readFile(fileURLToPath(new URL('./public/style.css',import.meta.url)),'utf8');return send(200,'text/css',body.replaceAll('__ASSET_VERSION__',assetVersion),{'Cache-Control':'no-store'});}
