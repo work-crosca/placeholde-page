@@ -6,16 +6,16 @@ const source=readFileSync(new URL('../public/mascot.js',import.meta.url),'utf8')
 
 function exercise(run,assert){
  function scenario(reduced=false){
-  let now=1000,raf=0;
+  let now=1000,raf=0,randomValue=.5;
   const listeners=()=>({events:{},addEventListener(n,f){(this.events[n]??=[]).push(f);},emit(n,e={}){for(const f of this.events[n]||[])f(e);}});
   const node=()=>Object.assign(listeners(),{attrs:{},dataset:{},setAttribute(k,v){this.attrs[k]=String(v);},getBoundingClientRect(){return {left:100,top:200,width:180,height:150};}});
-  const nodes=Object.fromEntries(['#head','#eyes','#eye-left','#eye-right','#mouth','#face','#blush','#screen-shine','#face-glow-alpha','#hearts','#sleep-symbols'].map(k=>[k,node()]));
+  const nodes=Object.fromEntries(['#head','#eyes','#eye-left','#eye-right','#mouth','#face','#blush','#screen-shine','#face-glow-alpha','#hearts','#tears','#spiral-eyes','#scared-eyes','#wavy-mouth','#sleep-symbols'].map(k=>[k,node()]));
   const svg=Object.assign(node(),{querySelector:k=>nodes[k]});
   const button=Object.assign(node(),{querySelector:()=>svg});
   const root=listeners(),win=Object.assign(listeners(),{scrollY:0,innerWidth:1000,dispatchEvent(){}});
   const doc=Object.assign(listeners(),{hidden:false,documentElement:root,querySelector:k=>k==='.mascot'?button:null});
   const queue=new Map();
-  run({document:doc,window:win,matchMedia:q=>Object.assign(listeners(),{matches:q.includes('reduced-motion')&&reduced}),performance:{now:()=>now},requestAnimationFrame:f=>{queue.set(++raf,f);return raf;},cancelAnimationFrame:id=>queue.delete(id),setTimeout:()=>1,clearTimeout(){},navigator:{},CustomEvent:class{}});
+  run({Math:Object.assign(Object.create(Math),{random:()=>randomValue}),document:doc,window:win,matchMedia:q=>Object.assign(listeners(),{matches:q.includes('reduced-motion')&&reduced}),performance:{now:()=>now},requestAnimationFrame:f=>{queue.set(++raf,f);return raf;},cancelAnimationFrame:id=>queue.delete(id),setTimeout:()=>1,clearTimeout(){},navigator:{},CustomEvent:class{}});
   function frame(ms=16){now+=ms;const pending=[...queue.values()];queue.clear();for(const f of pending)f(now);}
   const exit=(y,type='mouse',relatedTarget=null)=>root.emit('pointerleave',{pointerType:type,clientX:180,clientY:y,relatedTarget});
   exit(0,'touch');assert.notEqual(button.dataset.emotion,'angry');
@@ -48,12 +48,28 @@ function exercise(run,assert){
   win.emit('mouseout',{clientX:180,clientY:5,relatedTarget:null,sourceCapabilities:{firesTouchEvents:true}});assert.notEqual(button.dataset.emotion,'angry');
   // A touch double-tap activates love, including its color and dynamic accents.
   button.emit('click',{pointerType:'touch',detail:1});frame(100);
+  let lastChosen=button.dataset.emotion;
   button.emit('click',{pointerType:'touch',detail:1});frame(100);
   assert.equal(button.dataset.emotion,'love');assert.equal(nodes['#face'].attrs.stroke,'#f9a1cb');
   for(let i=0;i<15;i++)frame(16);
   assert.ok(Number(nodes['#blush'].attrs.opacity)>.3);assert.ok(Number(nodes['#hearts'].attrs.opacity)>.8);
   assert.ok(Number(nodes['#face-glow-alpha'].attrs.slope)>.3);
   if(!reduced){frame(31000);for(let i=0;i<20;i++)frame(16);assert.equal(button.dataset.emotion,'sleepy');assert.ok(Number(nodes['#face'].attrs.opacity)<.65);}
+  const pool=['happy','sad','surprised','love','suspicious','bored','confused','excited','shy','angry','curious','laughing','scared','crying','dizzy','proud'];
+  const newPoses={laughing:null,scared:'#scared-eyes',crying:'#tears',dizzy:'#spiral-eyes',proud:null};
+  for(const [name,layer] of Object.entries(newPoses)){
+   doc.emit('visibilitychange');frame(800);
+   const candidates=pool.filter(n=>n!==lastChosen);randomValue=(candidates.indexOf(name)+.5)/candidates.length;
+   button.emit('click',{pointerType:'mouse',detail:1});lastChosen=name;
+   assert.equal(button.dataset.emotion,name);
+   for(let i=0;i<25;i++)frame(16);
+   for(const id of ['#tears','#spiral-eyes','#scared-eyes'])assert.ok(layer===id?Number(nodes[id].attrs.opacity)>.95:Number(nodes[id].attrs.opacity)<.05);
+   assert.ok(name==='dizzy'?Number(nodes['#wavy-mouth'].attrs.opacity)>.95:Number(nodes['#wavy-mouth'].attrs.opacity)<.05);
+   assert.ok(name==='scared'||name==='dizzy'?Number(nodes['#eye-left'].attrs.opacity)<.05:Number(nodes['#eye-left'].attrs.opacity)>.95);
+   if(name==='laughing')assert.ok(Number(nodes['#mouth'].attrs['fill-opacity'])>.95);
+   if(name==='proud')assert.ok(nodes['#head'].attrs.transform.includes('rotate(-'));
+   move(60);move(10);assert.equal(button.dataset.emotion,'angry');assert.equal(nodes['#face'].attrs.stroke,'#ff777e');assert.equal(Number(nodes['#tears'].attrs.opacity),0);assert.equal(Number(nodes['#spiral-eyes'].attrs.opacity),0);assert.equal(Number(nodes['#scared-eyes'].attrs.opacity),0);move(80);frame();
+  }
  }
  scenario();scenario(true);
 }

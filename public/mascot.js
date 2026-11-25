@@ -1,7 +1,7 @@
 // Original parametric SVG animation. One state controller owns all expressions.
 const button=document.querySelector('.mascot');
 if(button){
-const svg=button.querySelector('svg'),head=svg.querySelector('#head'),eyes=svg.querySelector('#eyes'),left=svg.querySelector('#eye-left'),right=svg.querySelector('#eye-right'),mouth=svg.querySelector('#mouth'),face=svg.querySelector('#face'),blush=svg.querySelector('#blush'),shine=svg.querySelector('#screen-shine'),glow=svg.querySelector('#face-glow-alpha'),hearts=svg.querySelector('#hearts'),sleep=svg.querySelector('#sleep-symbols');
+const svg=button.querySelector('svg'),head=svg.querySelector('#head'),eyes=svg.querySelector('#eyes'),left=svg.querySelector('#eye-left'),right=svg.querySelector('#eye-right'),mouth=svg.querySelector('#mouth'),face=svg.querySelector('#face'),blush=svg.querySelector('#blush'),shine=svg.querySelector('#screen-shine'),glow=svg.querySelector('#face-glow-alpha'),hearts=svg.querySelector('#hearts'),tears=svg.querySelector('#tears'),spirals=svg.querySelector('#spiral-eyes'),scaredEyes=svg.querySelector('#scared-eyes'),wavyMouth=svg.querySelector('#wavy-mouth'),sleep=svg.querySelector('#sleep-symbols');
 const motion=matchMedia('(prefers-reduced-motion: reduce)');
 const mobile=matchMedia('(max-width: 700px), (pointer: coarse)');
 let browserExit=null,edgeMouse=null,lastInput='mouse',touchUntil=0,press=null,pressTimer=0,suppressClick=false,lastTouchTap=-Infinity,lastScroll=window.scrollY,scrollAt=-Infinity;
@@ -24,13 +24,19 @@ const poses={
  angry:[E(13,7,1,10),E(13,-7,1,10),-12,0],
  curious:[E(0,12,0,20),E(0,7,0,15,2),5,0],
  wink:[E(0,10,0,18),E(11,0,-5,6),9,0],
- blink:[E(10,0,0,3),E(10,0,0,3),0,0]
+ blink:[E(10,0,0,3),E(10,0,0,3),0,0],
+ laughing:[E(14,0,-29,8),E(14,0,-29,8),15,1],
+ scared:[E(0,12,0,23),E(0,12,0,23),0,1],
+ crying:[E(12,-7,-2,8),E(12,7,-2,8),-15,0],
+ dizzy:[E(0,10,0,18),E(0,10,0,18),0,0],
+ proud:[E(12,0,10,6),E(12,0,10,6),10,0]
 };
 const names=Object.keys(poses).filter(n=>!['neutral','blink','sleepy','wink'].includes(n));
 // Additional interpolated channels: blush, glow strength and screen-face brightness.
-const accents={love:[.48,.38,1],shy:[.65,.25,1],excited:[.12,.58,1],happy:[.12,.35,1],sleepy:[0,.08,.55],surprised:[0,.42,1],angry:[0,.40,1]};
-const colors={angry:'#ff777e',love:'#f9a1cb',sad:'#81aef3',sleepy:'#759fc4'};
-const vector=n=>[...poses[n][0],...poses[n][1],...poses[n].slice(2),n==='love'?1:0,...(accents[n]||[0,.22,1])];
+const accents={love:[.48,.38,1],shy:[.65,.25,1],excited:[.12,.58,1],happy:[.12,.35,1],sleepy:[0,.08,.55],surprised:[0,.42,1],angry:[0,.40,1],laughing:[.28,.48,1],scared:[0,.34,1],crying:[0,.2,.9],dizzy:[0,.24,1],proud:[.16,.32,1]};
+const colors={angry:'#ff777e',love:'#f9a1cb',sad:'#81aef3',sleepy:'#759fc4',scared:'#d0eaff',crying:'#81b8ff',dizzy:'#c3b7ff'};
+// Extra channels: tears, spiral eyes, hollow eyes, mouth width, wavy mouth, proud tilt, laugh bounce.
+const vector=n=>[...poses[n][0],...poses[n][1],...poses[n].slice(2),n==='love'?1:0,...(accents[n]||[0,.22,1]),n==='crying'?1:0,n==='dizzy'?1:0,n==='scared'?1:0,n==='laughing'?10:n==='proud'?3:0,n==='dizzy'?1:0,n==='proud'?-5:0,n==='laughing'?1:0];
 let current=vector('neutral'),target=current.slice(),state='idle',emotion='neutral',lastEmotion='',until=0,frame=0,previous=0,activity=performance.now(),idleAt=activity+random(4000,8000),blinkAt=activity+random(3000,6000),secondBlink=0,hover=null,pointer=null,gx=0,gy=0,hx=0,hy=0,tilt=0,pulse=0,clicks=0,lastClick=-Infinity,lastPointer=null,lastFast=-Infinity,near=false;
 function set(name,next='reaction',duration=1400,now=performance.now()){
  emotion=name;state=next;until=now+duration;target=vector(name);button.dataset.emotion=name;button.dataset.state=next;
@@ -43,11 +49,12 @@ function paint(now,dt){
  for(const [el,x,offset] of [[left,85,0],[right,155,5]]){
   const [w,h,c,s,o]=current.slice(offset,offset+5);
   el.setAttribute('d',`M${x-w} ${79-h+o}Q${x} ${79+c+o} ${x+w} ${79+h+o}`);
-  el.setAttribute('stroke-width',s);el.setAttribute('opacity',1-current[12]);
+  el.setAttribute('stroke-width',s);el.setAttribute('opacity',clamp(1-current[12]-current[17]-current[18],0,1));
  }
  hearts.setAttribute('opacity',current[12]);
+ tears.setAttribute('opacity',current[16]);spirals.setAttribute('opacity',current[17]);scaredEyes.setAttribute('opacity',current[18]);wavyMouth.setAttribute('opacity',current[20]);mouth.setAttribute('opacity',1-current[20]);
  const smile=current[10],open=current[11];
- const mw=10-open*4;
+ const mw=10-open*4+current[19];
  mouth.setAttribute('d',`M${120-mw} 116Q120 ${116+smile+open*14} ${120+mw} 116Q120 ${116+smile-open*22} ${120-mw} 116Z`);
  mouth.setAttribute('fill-opacity',open);
  const faceColor=browserExit?'#ff777e':colors[emotion]||'#9fd8ff';
@@ -62,14 +69,19 @@ function paint(now,dt){
  if(motion.matches)gx=gy=hx=hy=tilt=0;
  eyes.setAttribute('transform',`translate(${gx} ${gy})`);
  hearts.setAttribute('transform',`translate(${gx} ${gy})`);
+ const tearDrift=motion.matches?0:Math.sin(now/180)*2*current[16];
+ tears.setAttribute('transform',`translate(${gx*.5} ${gy*.5+tearDrift})`);
+ const spin=motion.matches?0:Math.sin(now/220)*15*current[17];
+ spirals.setAttribute('transform',`translate(${gx} ${gy}) rotate(${spin} 120 79)`);
+ scaredEyes.setAttribute('transform',`translate(${gx} ${gy})`);
  blush.setAttribute('transform',`translate(${gx*.35} ${gy*.35})`);
  shine.setAttribute('transform',`translate(${gx*.48} ${gy*.35})`);
- const breathe=motion.matches?0:Math.sin(now/1000)*1.8;
+ const breathe=motion.matches?0:Math.sin(now/1000)*1.8+Math.sin(now/85)*2.5*current[22];
  pulse*=Math.exp(-dt/170);
  const squash=motion.matches?0:Math.sin(pulse*Math.PI)*.09;
  const elapsed=browserExit?now-browserExit.at:Infinity;
  const shake=motion.matches||elapsed>=420?0:Math.sin(elapsed/25)*3*(1-elapsed/420);
- head.setAttribute('transform',`translate(${hx+shake} ${hy+breathe}) rotate(${tilt} 120 90) translate(120 90) scale(${1+squash} ${1-squash}) translate(-120 -90)`);
+ head.setAttribute('transform',`translate(${hx+shake} ${hy+breathe}) rotate(${tilt+current[21]} 120 90) translate(120 90) scale(${1+squash} ${1-squash}) translate(-120 -90)`);
  sleep.setAttribute('opacity',state==='sleeping'?'0.85':'0');
 }
 function resume(now){activity=now;idleAt=now+random(4000,8000);if(state==='sleeping'){set('happy','reaction',1000,now);}}
