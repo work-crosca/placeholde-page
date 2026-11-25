@@ -115,3 +115,7 @@ The CI workflow installs the locked dependencies with `npm ci`, runs the syntax 
 ### Motion and mascot placement
 
 The localized context menu and a small accessible footer control pause/resume all automatic animations. Manual preference is stored locally when storage is available; the OS reduced-motion preference always wins. Explicit mascot reactions remain static while paused. Mouse and touch input are distinguished independently of screen width. The fixed mascot chooses a collision-free position, shrinks if necessary, and hides only when no safe area exists (unless it has keyboard focus). No page content is moved.
+
+### Quality tooling
+
+`npm run lint` runs a version-pinned ESLint configuration, and CI runs it together with the unit and integration tests. `npm run format` / `npm run format:check` use version-pinned Prettier; formatting remains opt-in until the existing compact source and regex-based tests are migrated together. The separate Chromium browser CI job installs a pinned test-only Playwright package without touching the production lockfile. It exercises responsive placement, persistent motion controls, reduced motion, and input handling.
