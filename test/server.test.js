@@ -18,5 +18,6 @@ test('HTTP server handles malformed targets and remains available',async(t)=>{
  assert.equal((await request('/manifest.webmanifest')).status,200);
  assert.equal((await request('/fonts/space-grotesk-latin.woff2')).status,200);
  for(const path of ['/motion-preference.js','/mascot/expressions.js','/mascot/placement.js'])assert.equal((await request(path)).status,200);
+ for(const path of ['/icons/cursor-idle.svg','/icons/cursor-pointer.svg']){const cursor=await request(path);assert.equal(cursor.status,200);assert.equal(cursor.headers['content-type'],'image/svg+xml');}
  assert.equal((await request('/')).headers['x-content-type-options'],'nosniff');
 });

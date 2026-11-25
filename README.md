@@ -119,3 +119,7 @@ The localized context menu and a small accessible footer control pause/resume al
 ### Quality tooling
 
 `npm run lint` runs a version-pinned ESLint configuration, and CI runs it together with the unit and integration tests. `npm run format` / `npm run format:check` use version-pinned Prettier; formatting remains opt-in until the existing compact source and regex-based tests are migrated together. The separate Chromium browser CI job installs a pinned test-only Playwright package without touching the production lockfile. It exercises responsive placement, persistent motion controls, reduced motion, and input handling.
+
+### Circular cursor
+
+On fine-pointer devices with hover, the browser uses a centered, hollow blue circle by default and a filled blue circle for links and enabled buttons. Selectable text and disabled controls retain their native cursors; touch devices are unchanged. The SVG assets are self-hosted and do not require JavaScript.

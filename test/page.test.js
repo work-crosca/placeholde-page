@@ -40,3 +40,15 @@ test('Space Grotesk is self-hosted and applies to the page and controls',()=>{co
 test('Mascot 2.0 has a larger display and independently animated spirals',()=>{const html=render(config());assert.match(html,/<rect x="30" y="29" width="180" height="120" rx="43" fill="url\(#screen-blue\)"\/>/);for(const id of ['spiral-left','spiral-right'])assert.ok(html.includes('id="'+id+'"'));const css=readFileSync(new URL('../public/style.css',import.meta.url),'utf8');assert.ok(css.includes('--mascot-size:clamp(180px,18vw,240px)'));assert.ok(css.includes('width:clamp(110px,30vw,140px)'));});
 
 test('text selection uses the branded palette, including gradient headings',()=>{const css=readFileSync(new URL('../public/style.css',import.meta.url),'utf8');assert.match(css,/::selection\{background:#9fd8ff;color:#191717/);assert.match(css,/\.title-text::selection\{-webkit-text-fill-color:#191717;color:#191717;background-color:#9fd8ff/);});
+
+test('circular cursor uses centered hotspots, preserves text selection and limits itself to fine pointers',()=>{
+ const css=readFileSync(new URL('../public/style.css',import.meta.url),'utf8');
+ assert.match(css,/@media \(hover:hover\) and \(pointer:fine\)/);
+ assert.match(css,/cursor:url\("\/icons\/cursor-idle\.svg"\) 12 12,default/);
+ assert.match(css,/cursor:url\("\/icons\/cursor-pointer\.svg"\) 12 12,pointer/);
+ assert.match(css,/\.description,\.hero h1,[^{}]*\{cursor:text\}/);
+ const idle=readFileSync(new URL('../public/icons/cursor-idle.svg',import.meta.url),'utf8');
+ const pointer=readFileSync(new URL('../public/icons/cursor-pointer.svg',import.meta.url),'utf8');
+ assert.match(idle,/fill="none"/);assert.match(pointer,/fill="#9fd8ff"/);
+ for(const image of [idle,pointer])assert.match(image,/width="24" height="24"/);
+});
