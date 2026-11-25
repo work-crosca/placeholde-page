@@ -132,3 +132,5 @@ The motion control reports system-enforced reduced motion instead of offering a 
 ### Hidden interactive experience
 
 Open the localized terminal through the desktop context menu or Ctrl/Cmd+Shift+K. Commands are local, fixed and non-executable; no shell or network access is exposed. The mascot now has a decaying session-local mood bias, reacts to connection changes and return to the tab, and changes the browser favicon for sustained expressions. The original brand favicon returns for neutral expressions and paused motion. ASCII pointer proximity and click ripples obey the shared motion preference. Hidden interactions include typing mirco, the Konami code (static CRT scanlines), five quick logo clicks and ten quick mascot clicks. No new runtime dependencies or environment settings are needed.
+
+The terminal uses macOS-inspired window chrome: red closes the dialog, yellow hides it without losing command history (reopen through the shortcut or context menu), and green toggles an expanded viewport-safe window. All controls have localized accessible labels and keyboard focus states.

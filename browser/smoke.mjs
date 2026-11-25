@@ -61,13 +61,29 @@ try{
   }
   assert.equal(await page.locator('.contact').getAttribute('href'),'mailto:contact@example.com');
   assert.equal(await page.locator('.social').getAttribute('href'),'https://t.me/mirco_test');
-  if(viewport.width===1440){
+  if(viewport.width===1440||viewport.width===320){
    await page.keyboard.press('Control+Shift+K');
    const terminal=page.locator('.mirco-terminal');
    await terminal.waitFor({state:'visible'});
+   assert.equal(await terminal.locator('.terminal-window-controls button').count(),3);
+   const initial=await terminal.boundingBox();
+   await terminal.locator('.terminal-maximize').click();
+   assert.equal(await terminal.locator('.terminal-maximize').getAttribute('aria-pressed'),'true');
+   const expanded=await terminal.boundingBox();
+   assert.ok(expanded.height>=initial.height);
+   assert.ok(expanded.x>=0&&expanded.y>=0&&expanded.x+expanded.width<=viewport.width+1&&expanded.y+expanded.height<=viewport.height+1);
+   await terminal.locator('.terminal-maximize').click();
+   assert.equal(await terminal.locator('.terminal-maximize').getAttribute('aria-pressed'),'false');
    await terminal.locator('input').fill('help');
    await terminal.locator('input').press('Enter');
    assert.match(await terminal.locator('.terminal-output').innerText(),/whoami/);
+   await terminal.locator('.terminal-minimize').click();
+   await terminal.waitFor({state:'hidden'});
+   await page.keyboard.press('Control+Shift+K');
+   assert.match(await terminal.locator('.terminal-output').innerText(),/whoami/);
+   await terminal.locator('.terminal-close').click();
+   await terminal.waitFor({state:'hidden'});
+   await page.keyboard.press('Control+Shift+K');
    await terminal.locator('input').fill('retro');
    await terminal.locator('input').press('Enter');
    assert.equal(await page.locator('html').evaluate(el=>el.classList.contains('mirco-retro')),true);
