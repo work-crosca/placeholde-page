@@ -19,7 +19,7 @@ if (menu && toast) {
   function styled(){return window.getComputedStyle(menu).position==='fixed';}
 
   function open(x, y) {
-    previousFocus = document.activeElement;
+    if(menu.hidden)previousFocus = document.activeElement;
     menu.hidden = false;
     // Measure after making the popup visible so it never spills off-screen.
     const bounds = menu.getBoundingClientRect();
@@ -34,8 +34,12 @@ if (menu && toast) {
     return target instanceof Element && Boolean(target.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"]'));
   }
 
+  function nativeMenu(target) {
+    return target instanceof Element && Boolean(target.closest('a[href], img, video, audio, [download]'));
+  }
+
   document.addEventListener('contextmenu', (event) => {
-    if (event.defaultPrevented || editable(event.target) || !styled()) return;
+    if (event.defaultPrevented || editable(event.target) || nativeMenu(event.target) || !styled()) return;
     // Preserve the long-press and text-selection menus on touch devices.
     if (event.pointerType === 'touch' ||
         (window.matchMedia('(hover: none) and (pointer: coarse)').matches && event.button !== 2)) return;
@@ -45,7 +49,7 @@ if (menu && toast) {
   });
 
   document.addEventListener('keydown', (event) => {
-    if ((event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) && !editable(event.target) && styled()) {
+    if ((event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) && !editable(event.target) && !nativeMenu(event.target) && styled()) {
       event.preventDefault();
       const focused = document.activeElement;
       const bounds = focused && focused !== document.body ? focused.getBoundingClientRect() : null;
@@ -71,7 +75,7 @@ if (menu && toast) {
   menu.addEventListener('click', (event) => {
     const action = event.target.closest('button[data-action]')?.dataset.action;
     if (!action) return;
-    close();
+    close(true);
     if (action === 'refresh') {
       window.location.reload();
     } else if (action === 'soon') {

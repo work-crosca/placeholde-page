@@ -55,3 +55,5 @@ test('all animated assets use the same deployment fingerprint',()=>{
 });
 
 test('context menu has spaced items and no visible border',()=>{const rule=css.match(/\.context-menu\{([^}]+)\}/)[1];assert.match(rule,/display:flex/);assert.match(rule,/flex-direction:column/);assert.match(rule,/gap:4px/);assert.match(rule,/border:0/);});
+
+test('native links and media keep their own menu and selection remains readable',()=>{assert.match(script,/nativeMenu\(event.target\)/);assert.match(script,/a\[href\], img, video, audio/);assert.match(css,/::selection\{[^}]*background:#9fd8ff/);});

@@ -7,7 +7,7 @@ A reusable coming-soon / maintenance page for MIRCO projects. Full-screen charco
 Requires Node.js 22+. React and React Icons are used only to render the Telegram SVG on the server. No database or browser React bundle required.
 
 ```sh
-npm install
+npm ci
 npm start
 npm test
 npm run build
@@ -32,6 +32,7 @@ All options are runtime environment variables, so one image can serve multiple d
 | SITE_TELEGRAM | empty | Telegram username without @; hides the icon when unset or invalid |
 | SITE_ASCII_BACKGROUND | true | Set false to disable the animated decorative ASCII background |
 | SITE_MASCOT | true | Set false to hide mascot |
+| SITE_TYPEWRITER | true | Set false to keep the description static |
 | SITE_GOOGLE_ANALYTICS_ID | empty | Optional GA4 measurement ID (G-XXXXXXXXXX) |
 
 ## Coolify
@@ -51,7 +52,7 @@ Alternatively: `docker build -t placeholder-page .` then `docker run --rm -p 300
 - src/page.js: localization, configuration, escaped HTML and original SVG.
 - public/style.css: responsive layout, reduced-motion support, blinking.
 - public/context-menu.js: desktop right-click menu with localized Coming soon/Refresh actions, keyboard navigation and viewport-aware positioning.
-- public/mascot.js: nine-direction gaze, random click and idle expressions, randomized blinking, sleepy state after 30 seconds, visibility-aware timers and reduced-motion support.
+- public/mascot.js: nine-direction gaze, random click and idle expressions, randomized blinking, sleepy state after 32 seconds, visibility-aware timers and reduced-motion support.
 - / returns 200 in coming-soon mode, 503 with Retry-After in maintenance.
 - /health returns 200; unknown paths return 404.
 - robots.txt and noindex prevent indexing of temporary content. Remove these restrictions when replacing the placeholder with the actual website.
@@ -71,7 +72,7 @@ Favicon SVG/ICO, PNG favicons, Apple touch icon and `public/images/social/mirco.
 
 ## Robot mascot
 
-Original SVG head only, no reflection line, no body. Seven random emotions plus neutral and blink. Idle expressions appear after 4–8 seconds of inactivity, last 1–2 seconds; after 30 seconds the robot sleeps until activity resumes. Clicking or tapping triggers a random expression without consecutive repeats. Mouse pointers move the eyes smoothly.  Reduced motion disables autonomous changes and gaze, while intentional button interaction remains available. No sprite sheets or additional dependencies are needed.
+Original SVG head only, a subtle screen reflection, no body. 23 pose configurations include 16 explicit random reactions, 13 idle reactions and dedicated neutral, blink, wink and sleep stages. Idle expressions appear after 4–8 seconds of inactivity, last 1–2 seconds; drowsiness starts at 20 seconds, yawning at 30 seconds, and sleep at 32 seconds until activity resumes. Clicking or tapping triggers a random expression without consecutive repeats. Mouse pointers move the eyes smoothly.  Reduced motion disables autonomous changes and gaze, while intentional button interaction remains available. No sprite sheets or additional dependencies are needed.
 
 ## ASCII background
 
@@ -79,7 +80,7 @@ An original procedural wave field of ASCII characters is drawn on a decorative c
 
 ### Animation controller
 
-Parametric SVG expressions interpolate in one animation loop. Eyes lead the head, with inertial tracking, breathing, click squash, occasional double blink, 12 emotions, idle and sleeping states. CTA hover/focus holds excitement; Telegram hover/focus holds curiosity; title hover holds curiosity. Context reactions take priority over idle reactions. Click emits a decorative ASCII ripple when enabled. Reduced motion disables autonomous animation and tracking; explicit reactions remain available. Hidden tabs stop the animation loop.
+Parametric SVG expressions interpolate in one animation loop. Eyes lead the head, with inertial tracking, breathing, click squash, occasional double blink, 23 pose configurations, idle and sleeping states. CTA hover/focus holds excitement; Telegram hover/focus holds curiosity; title hover holds curiosity. Context reactions take priority over idle reactions. Click emits a decorative ASCII ripple when enabled. Reduced motion disables autonomous animation and tracking; explicit reactions remain available. Hidden tabs stop the animation loop.
 
 ### Mobile gestures and haptics
 
@@ -93,7 +94,7 @@ The header uses the original MIRCO folded blue monogram from `public/images/bran
 
 ## Custom context menu
 
-On desktop, right-clicking the placeholder opens a compact two-action menu in the site's dark/blue visual style. **Coming soon** shows the current localized page description in a temporary, accessible toast; **Refresh** reloads the page. The menu is clamped to the viewport, dismisses on outside click, scroll, resize, browser blur or Escape, and supports keyboard Context Menu / Shift+F10 and arrow-key navigation. Normal selection, editable fields and touch long-press context menus remain available.
+On desktop, right-clicking the placeholder opens a compact two-action menu in the site's dark/blue visual style. **Coming soon** shows the current localized page description in a temporary, accessible toast; **Refresh** reloads the page. The menu is clamped to the viewport, dismisses on outside click, scroll, resize, browser blur or Escape, and supports keyboard Context Menu / Shift+F10 and arrow-key navigation. Normal selection, links, media, editable fields and touch long-press context menus retain their native behavior.
 
 ## Animated heading and description
 
@@ -106,3 +107,7 @@ Set `SITE_GOOGLE_ANALYTICS_ID=G-ENKKEVJ415` (or your own measurement ID) as a ru
 ## Typography
 
 Space Grotesk is self-hosted via the pinned Fontsource variable package (SIL Open Font License), using Latin and Latin Extended WOFF2 subsets and weights 300–700. All page UI uses this family, with Arial/Helvetica fallback for unsupported glyphs such as Cyrillic. The heading uses weight 700. No third-party font requests or environment variables are required.
+
+## Continuous integration
+
+The CI workflow installs the locked dependencies with `npm ci`, runs the syntax checks and test suite on Node.js 22, and checks changes on pull requests and pushes to main.

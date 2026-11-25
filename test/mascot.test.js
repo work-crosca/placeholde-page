@@ -15,9 +15,9 @@ function exercise(run,assert){
   const root=listeners(),win=Object.assign(listeners(),{scrollY:0,innerWidth:1000,dispatchEvent(){}});
   const contact=node(),social=node();
   const doc=Object.assign(listeners(),{hidden:false,documentElement:root,querySelector:k=>k==='.mascot'?button:k==='.contact'?contact:k==='.social'?social:null});
-  const queue=new Map();
-  run({Math:Object.assign(Object.create(Math),{random:()=>randomValue}),document:doc,window:win,matchMedia:q=>Object.assign(listeners(),{matches:q.includes('reduced-motion')&&reduced}),performance:{now:()=>now},requestAnimationFrame:f=>{queue.set(++raf,f);return raf;},cancelAnimationFrame:id=>queue.delete(id),setTimeout:()=>1,clearTimeout(){},navigator:{},CustomEvent:class{}});
-  function frame(ms=16){now+=ms;const pending=[...queue.values()];queue.clear();for(const f of pending)f(now);}
+  const queue=new Map(),timers=new Map();
+  run({Math:Object.assign(Object.create(Math),{random:()=>randomValue}),document:doc,window:win,matchMedia:q=>Object.assign(listeners(),{matches:q.includes('reduced-motion')&&reduced}),performance:{now:()=>now},requestAnimationFrame:f=>{queue.set(++raf,f);return raf;},cancelAnimationFrame:id=>queue.delete(id),setTimeout:(f,ms)=>{timers.set(++raf,{f,at:now+ms});return raf;},clearTimeout:id=>timers.delete(id),navigator:{},CustomEvent:class{}});
+  function frame(ms=16){now+=ms;for(const [id,timer] of [...timers])if(timer.at<=now&&timers.delete(id))timer.f();const pending=[...queue.values()];queue.clear();for(const f of pending)f(now);}
   const exit=(y,type='mouse',relatedTarget=null)=>root.emit('pointerleave',{pointerType:type,clientX:180,clientY:y,relatedTarget});
   exit(0,'touch');assert.notEqual(button.dataset.emotion,'angry');
   exit(200);assert.notEqual(button.dataset.emotion,'angry');
@@ -103,6 +103,14 @@ function exercise(run,assert){
    doc.emit('visibilitychange');randomValue=.75;for(let i=0;i<3;i++){frame(8000);assert.ok(!['angry','crying','scared'].includes(button.dataset.emotion));frame(2000);}
    doc.emit('visibilitychange');frame(32000);win.emit('pointerdown',{pointerType:'touch',isPrimary:true,clientX:100,clientY:100});assert.equal(button.dataset.state,'waking');
   }else{frame(40000);assert.notEqual(button.dataset.state,'sleeping');assert.equal(button.dataset.emotion,'neutral');}
+  // An unconfirmed top-edge preview expires even with reduced motion.
+  doc.emit('visibilitychange');move(80);move(10);assert.equal(button.dataset.emotion,'angry');frame(1799);assert.equal(button.dataset.emotion,'angry');frame(1);assert.equal(button.dataset.emotion,'neutral');
+  // Confirmation cancels expiry and preserves the browser-exit reaction.
+  move(80);move(10);exit(0);frame(2000);assert.equal(button.dataset.emotion,'angry');root.emit('pointerenter',{pointerType:'mouse'});frame();assert.equal(button.dataset.emotion,'neutral');
+  // A previous click timeout must not override a newer CTA interaction.
+  button.emit('click',{pointerType:'mouse',detail:1});contact.emit('pointerenter',{pointerType:'mouse'});frame(1500);assert.equal(button.dataset.emotion,'excited');contact.emit('pointerleave');
+  // Reconstruct keyboard focus after a hidden tab is shown again.
+  doc.activeElement=contact;contact.emit('focus');doc.hidden=true;doc.emit('visibilitychange');doc.hidden=false;doc.emit('visibilitychange');frame();assert.equal(button.dataset.emotion,'excited');doc.activeElement=null;contact.emit('blur');frame();assert.equal(button.dataset.emotion,'neutral');
  }
  scenario();scenario(true);
 }
