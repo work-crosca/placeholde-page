@@ -9,17 +9,42 @@ const element=(tag,className,text)=>{const el=document.createElement(tag);if(cla
 const dialog=element('dialog','mirco-terminal');
 dialog.setAttribute('aria-label',copy.title);
 const header=element('div','terminal-header');
-const close=element('button','terminal-close','×');close.type='button';close.setAttribute('aria-label',copy.close);
-header.append(element('strong','',copy.title),close);
+const windowLabels={
+ en:{minimize:'Minimize',maximize:'Maximize',restore:'Restore window'},
+ ro:{minimize:'Minimizează',maximize:'Maximizează',restore:'Restabilește fereastra'},
+ ru:{minimize:'Свернуть',maximize:'Развернуть',restore:'Восстановить окно'}
+}[lang]||{minimize:'Minimize',maximize:'Maximize',restore:'Restore window'};
+const controls=element('div','terminal-window-controls');
+function windowButton(name,label,glyph){
+ const button=element('button','terminal-window-button terminal-'+name);
+ button.type='button';button.setAttribute('aria-label',label);button.title=label;
+ const dot=element('span','terminal-window-dot',glyph);dot.setAttribute('aria-hidden','true');button.append(dot);
+ return button;
+}
+const close=windowButton('close',copy.close,'×');
+const minimize=windowButton('minimize',windowLabels.minimize,'−');
+const maximize=windowButton('maximize',windowLabels.maximize,'↗');
+maximize.setAttribute('aria-pressed','false');
+controls.append(close,minimize,maximize);
+header.append(controls,element('strong','terminal-title',copy.title));
 const output=element('div','terminal-output');
 output.setAttribute('role','log');output.setAttribute('aria-live','polite');output.tabIndex=0;
 const form=element('form','terminal-form'),input=element('input'),run=element('button','terminal-run',copy.run);
 input.setAttribute('aria-label',copy.input);input.placeholder='help';input.autocomplete='off';input.spellcheck=false;input.maxLength=120;run.type='submit';
-form.append(element('span','','$'),input,run);dialog.append(header,output,form);document.body.append(dialog);
+form.append(element('span','','$'),input,run);
+const content=element('div','terminal-content');content.append(output,form);dialog.append(header,content);document.body.append(dialog);
 let previousFocus=null;
 function line(value){output.append(element('div','',value));while(output.children.length>50)output.firstElementChild.remove();output.scrollTop=output.scrollHeight;}
 function open(){if(dialog.open)return;previousFocus=document.activeElement;dialog.showModal();input.focus();}
 close.addEventListener('click',()=>dialog.close());
+minimize.addEventListener('click',()=>dialog.close());
+maximize.addEventListener('click',()=>{
+ const expanded=dialog.classList.toggle('is-expanded');
+ maximize.setAttribute('aria-pressed',String(expanded));
+ const label=expanded?windowLabels.restore:windowLabels.maximize;
+ maximize.setAttribute('aria-label',label);maximize.title=label;
+ maximize.firstElementChild.textContent=expanded?'↙':'↗';
+});
 dialog.addEventListener('close',()=>{if(previousFocus instanceof HTMLElement&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});});
 const celebrate=()=>window.dispatchEvent(new Event('mirco:celebrate'));
 function secret(){open();line(copy.secret);celebrate();}
