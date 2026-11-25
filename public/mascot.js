@@ -4,7 +4,7 @@ if(button){
 const svg=button.querySelector('svg'),head=svg.querySelector('#head'),eyes=svg.querySelector('#eyes'),left=svg.querySelector('#eye-left'),right=svg.querySelector('#eye-right'),mouth=svg.querySelector('#mouth'),face=svg.querySelector('#face'),blush=svg.querySelector('#blush'),shine=svg.querySelector('#screen-shine'),glow=svg.querySelector('#face-glow-alpha'),hearts=svg.querySelector('#hearts'),sleep=svg.querySelector('#sleep-symbols');
 const motion=matchMedia('(prefers-reduced-motion: reduce)');
 const mobile=matchMedia('(max-width: 700px), (pointer: coarse)');
-let browserExit=null,touchUntil=0,press=null,pressTimer=0,suppressClick=false,lastTouchTap=-Infinity,lastScroll=window.scrollY,scrollAt=-Infinity;
+let browserExit=null,edgeMouse=null,lastInput='mouse',touchUntil=0,press=null,pressTimer=0,suppressClick=false,lastTouchTap=-Infinity,lastScroll=window.scrollY,scrollAt=-Infinity;
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const random=(a,b)=>a+Math.random()*(b-a);
 // Eye geometry: horizontal half-span, vertical half-span, curve, stroke, offset.
@@ -93,10 +93,13 @@ function tick(now){
 function start(){cancelAnimationFrame(frame);frame=0;previous=0;if(!document.hidden&&!motion.matches)frame=requestAnimationFrame(tick);}
 function ripple(){if(motion.matches)return;const b=svg.getBoundingClientRect();window.dispatchEvent(new CustomEvent('mascot:ripple',{detail:{x:b.left+b.width/2,y:b.top+b.height/2}}));}
 window.addEventListener('pointermove',e=>{
- if(e.pointerType==='touch')return;
- endBrowserExit();
+ const now=performance.now();
+ lastInput=e.pointerType||'mouse';
+ if(lastInput==='touch'){edgeMouse=null;endBrowserExit();return;}
+ if(lastInput==='mouse'&&trackTopEdge(e,now))return;
+ if(lastInput!=='mouse'){edgeMouse=null;endBrowserExit();}
  if(motion.matches)return;
- const now=performance.now();resume(now);touchUntil=0;pointer={x:e.clientX,y:e.clientY};
+ resume(now);touchUntil=0;pointer={x:e.clientX,y:e.clientY};
  const b=svg.getBoundingClientRect(),close=Math.hypot(e.clientX-b.left-b.width/2,e.clientY-b.top-b.height/2)<b.width*.65;
  if(!hover&&['idle','tracking'].includes(state)){
   if(lastPointer&&now-lastPointer.t>0&&now-lastPointer.t<100&&Math.hypot(e.clientX-lastPointer.x,e.clientY-lastPointer.y)/(now-lastPointer.t)>2.5&&now-lastFast>3500){lastFast=now;set('surprised','reaction',850,now);}
@@ -106,16 +109,48 @@ window.addEventListener('pointermove',e=>{
 },{passive:true});
 function clearPointer(){pointer=null;touchUntil=0;near=false;lastPointer=null;}
 let reducedTimer;
-// Browser chrome is inaccessible: a top-edge mouse exit is only a proxy for tab-close intent.
+// Browser chrome is inaccessible. Preview on an upward approach to the top edge,
+// then confirm on any supported viewport-exit event. No actual tab hover is observable.
+const EDGE_PREVIEW=14,EDGE_RELEASE=26,EDGE_EXIT=48;
 function endBrowserExit(){if(!browserExit)return;browserExit=null;const now=performance.now();resume(now);blinkAt=now+random(3000,6000);secondBlink=0;if(hover)set(hover.name,'context',Infinity,now);else normal(now);}
-document.documentElement.addEventListener('pointerleave',e=>{
- if(e.pointerType==='touch')return;
+function beginBrowserExit(x,confirmed,now=performance.now()){
+ if(browserExit){browserExit.x=x;browserExit.confirmed||=confirmed;return;}
+ clearTimeout(reducedTimer);clearPointer();hover=null;resume(now);
+ browserExit={x,at:now,confirmed};set('angry','context',Infinity,now);
+ // Render the angry face immediately, even if the browser delays the next animation frame.
+ if(!motion.matches){current=target.slice();paint(now,100);}
+}
+function trackTopEdge(e,now){
+ const previousMouse=edgeMouse;
+ const upward=!!previousMouse&&now-previousMouse.at<=500&&e.clientY<previousMouse.y-1||e.movementY<0;
+ edgeMouse={x:e.clientX,y:e.clientY,at:now,upward};
+ if(browserExit?.confirmed){endBrowserExit();return false;}
+ if(browserExit){
+  if(e.clientY<=EDGE_RELEASE){browserExit.x=e.clientX;return true;}
+  endBrowserExit();
+ }
+ if(e.clientY>=0&&e.clientY<=EDGE_PREVIEW&&upward){beginBrowserExit(e.clientX,false,now);return true;}
+ return false;
+}
+function handleViewportExit(e){
+ if((e.pointerType&&e.pointerType!=='mouse')||lastInput!=='mouse'||e.sourceCapabilities?.firesTouchEvents||e.relatedTarget)return;
+ const now=performance.now(),y=e.clientY,x=e.clientX;
+ if(!Number.isFinite(x)||!Number.isFinite(y))return;
+ const recent=edgeMouse&&now-edgeMouse.at<=500;
+ const side=(x<=0||x>=window.innerWidth)&&y>EDGE_PREVIEW;
+ const top=!side&&(y<=EDGE_PREVIEW||y<=EDGE_EXIT&&recent&&edgeMouse.upward&&edgeMouse.y<=EDGE_EXIT);
  clearPointer();
- if(e.pointerType!=='mouse'||e.clientY>8||e.relatedTarget||browserExit)return;
- clearTimeout(reducedTimer);hover=null;const now=performance.now();resume(now);browserExit={x:e.clientX,at:now};set('angry','context',Infinity,now);
-});
-document.documentElement.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')endBrowserExit();});
-window.addEventListener('blur',()=>{clearPointer();endBrowserExit();});
+ if(top){beginBrowserExit(x,true,now);}
+ else{endBrowserExit();edgeMouse=null;}
+}
+const root=document.documentElement;
+root.addEventListener('pointerleave',handleViewportExit);
+root.addEventListener('mouseleave',handleViewportExit);
+window.addEventListener('mouseout',handleViewportExit);
+function returnFromBrowser(e){if((!e.pointerType||e.pointerType==='mouse')&&lastInput==='mouse'&&browserExit?.confirmed){edgeMouse=null;endBrowserExit();}}
+root.addEventListener('pointerenter',returnFromBrowser);
+root.addEventListener('mouseenter',returnFromBrowser);
+window.addEventListener('blur',()=>{clearPointer();if(!browserExit)edgeMouse=null;});
 function feedback(ms=18){try{if(typeof navigator.vibrate==='function')navigator.vibrate(ms);}catch{}}
 function explicit(name,now=performance.now(),duration=1400){
  browserExit=null;hover=null;resume(now);set(name,'reaction',duration,now);
@@ -123,6 +158,7 @@ function explicit(name,now=performance.now(),duration=1400){
 }
 window.addEventListener('pointerdown',e=>{
  if(e.pointerType!=='touch'||!e.isPrimary)return;
+ lastInput='touch';edgeMouse=null;endBrowserExit();
  const now=performance.now();resume(now);
  if(!motion.matches){pointer={x:e.clientX,y:e.clientY};touchUntil=now+1500;}
 },{passive:true});
@@ -158,7 +194,7 @@ window.addEventListener('scroll',()=>{
 },{passive:true});
 const contexts=[['.contact','excited'],['.social','curious'],['.hero h1','curious']];
 for(const [selector,name] of contexts){const el=document.querySelector(selector);if(!el)continue;let inside=false,focused=false;
- function update(){const now=performance.now();if(inside||focused){resume(now);hover={el,name};set(name,'context',Infinity,now);}else if(hover?.el===el){hover=null;normal(now);}}
+ function update(){if(browserExit)return;const now=performance.now();if(inside||focused){resume(now);hover={el,name};set(name,'context',Infinity,now);}else if(hover?.el===el){hover=null;normal(now);}}
  el.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch'){inside=true;update();}});el.addEventListener('pointerleave',()=>{inside=false;update();});
  if(selector!=='.hero h1'){
   let touchAt=-Infinity;
@@ -166,7 +202,7 @@ for(const [selector,name] of contexts){const el=document.querySelector(selector)
   el.addEventListener('focus',()=>{if(performance.now()-touchAt>1000){focused=true;update();}});el.addEventListener('blur',()=>{focused=false;update();});
  }
 }
-function reset(){cancelAnimationFrame(frame);clearTimeout(reducedTimer);clearTimeout(pressTimer);press=null;suppressClick=false;browserExit=null;hover=null;clearPointer();const now=performance.now();activity=now;idleAt=now+random(4000,8000);blinkAt=now+random(3000,6000);secondBlink=0;normal(now);start();}
+function reset(){cancelAnimationFrame(frame);clearTimeout(reducedTimer);clearTimeout(pressTimer);press=null;suppressClick=false;browserExit=null;edgeMouse=null;hover=null;clearPointer();const now=performance.now();activity=now;idleAt=now+random(4000,8000);blinkAt=now+random(3000,6000);secondBlink=0;normal(now);start();}
 document.addEventListener('visibilitychange',reset);motion.addEventListener('change',reset);mobile.addEventListener('change',reset);
 set(motion.matches?'neutral':'happy',motion.matches?'idle':'reaction',1200);start();
 }

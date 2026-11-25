@@ -15,7 +15,7 @@ test('head-only interactive mascot',()=>{const html=render(config());assert.matc
 
 test('optional ASCII background',()=>{assert.match(render(config()),/id="ascii-background"/);assert.match(render(config()),/ascii-background\.js/);const html=render(config({SITE_ASCII_BACKGROUND:'false'}));assert.ok(!html.includes('id="ascii-background"'));assert.ok(!html.includes('ascii-background.js'));});
 
-test('animated face layers',()=>{const html=render(config());assert.match(html,/id="hearts"/);assert.match(html,/id="sleep-symbols"/);assert.match(html,/mascot\.js\?v=robot-6/);});
+test('animated face layers',()=>{const html=render(config());assert.match(html,/id="hearts"/);assert.match(html,/id="sleep-symbols"/);assert.match(html,/mascot\.js\?v=robot-7/);});
 
 test('header uses original brand mark',()=>{const html=render(config());assert.match(html,/<img src="\/images\/brand\/mark\.svg" width="48" height="28" alt="MIRCO"/);assert.ok(!html.includes('<span class="brand">MIRCO</span>'));});
 
