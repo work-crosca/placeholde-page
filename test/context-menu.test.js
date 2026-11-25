@@ -66,3 +66,11 @@ test('motion toggle is localized, accessible and keyboard selection is preserved
  assert.match(script,/!window\.getSelection\(\)\?\.toString\(\)\.trim\(\)/);
  assert.match(server,/motion-preference\.js/);
 });
+
+test('motion controls distinguish system policy and expose both icons',()=>{
+ const html=render(config());
+ assert.match(html,/data-system="Animations paused by system settings"/);
+ assert.match(html,/data-motion-toggle="menu"[^>]*>[^]*?motion-pause-icon[^]*?motion-play-icon/);
+ assert.match(script,/motion.systemReduced\?control.dataset.system/);
+ assert.match(script,/setAttribute\('aria-disabled',String\(motion.systemReduced\)\)/);
+});

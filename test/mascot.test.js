@@ -4,8 +4,9 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 // Run the real controller in a deterministic DOM/timer harness; modules are tested separately.
 const expressions=readFileSync(new URL('../public/mascot/expressions.js',import.meta.url),'utf8').replaceAll('export const ','const ');
+const renderer=readFileSync(new URL('../public/mascot/renderer.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replaceAll('export function ','function ');
 const moodSource=readFileSync(new URL('../public/mascot/mood.js',import.meta.url),'utf8').replace('export function ','function ');
-const source=expressions+'\n'+moodSource+"\nconst motion=matchMedia('(prefers-reduced-motion: reduce)');\nconst attachPlacement=()=>{};\n"+readFileSync(new URL('../public/mascot.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace('const mood=createMood(activity);','const mood=createMood(activity);captureMood(mood.value);');
+const source=expressions+'\n'+moodSource+'\n'+renderer+"\nconst motion=matchMedia('(prefers-reduced-motion: reduce)');\nconst attachPlacement=()=>{};\n"+readFileSync(new URL('../public/mascot.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace('const mood=createMood(activity);','const mood=createMood(activity);captureMood(mood.value);');
 
 function exercise(run,assert){
  function scenario(reduced=false){
@@ -114,6 +115,16 @@ function exercise(run,assert){
   }else{frame(40000);assert.notEqual(button.dataset.state,'sleeping');assert.equal(button.dataset.emotion,'neutral');}
   // Explicit mouse events never become touch gestures even in a narrow viewport.
   if(!reduced){narrow=true;randomValue=0;doc.emit('visibilitychange');frame(1000);button.emit('click',{pointerType:'mouse',detail:1});frame(100);button.emit('click',{pointerType:'mouse',detail:2});assert.notEqual(button.dataset.emotion,'love');narrow=false;}
+  // Touch release handles the gesture before compatibility mouse clicks arrive.
+  doc.emit('visibilitychange');frame(1200);
+  for(let i=0;i<2;i++){
+   button.emit('pointerdown',{pointerType:'touch',isPrimary:true,pointerId:7,clientX:180,clientY:250});
+   win.emit('pointerdown',{pointerType:'touch',isPrimary:true,clientX:180,clientY:250});
+   win.emit('pointerup',{type:'pointerup',pointerId:7,clientX:180,clientY:250});
+   button.emit('click',{pointerType:'mouse',detail:1});
+   frame(100);
+  }
+  assert.equal(button.dataset.emotion,'love');
   // An unconfirmed top-edge preview expires even with reduced motion.
   doc.emit('visibilitychange');move(80);move(10);assert.equal(button.dataset.emotion,'angry');frame(1799);assert.equal(button.dataset.emotion,'angry');frame(1);assert.equal(button.dataset.emotion,'neutral');
   // Confirmation cancels expiry and preserves the browser-exit reaction.

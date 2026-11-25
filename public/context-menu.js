@@ -75,7 +75,7 @@ if (menu && toast) {
 
   menu.addEventListener('click', (event) => {
     const action = event.target.closest('button[data-action]')?.dataset.action;
-    if (!action) return;
+    if (!action || event.target.closest('button[data-action]')?.getAttribute('aria-disabled')==='true') return;
     close(true);
     if (action === 'terminal') {
       window.dispatchEvent(new Event('mirco:terminal'));
@@ -102,15 +102,17 @@ if (menu && toast) {
 const motionControls=[...document.querySelectorAll('[data-motion-toggle]')];
 function updateMotionControls(){
  for(const control of motionControls){
-  const label=motion.manualPaused?control.dataset.resume:control.dataset.pause;
+  const label=motion.systemReduced?control.dataset.system:motion.manualPaused?control.dataset.resume:control.dataset.pause;
   const text=control.querySelector('[data-motion-label]');
   if(text)text.textContent=label;
   control.setAttribute('aria-label',label);
   control.title=label;
-  control.dataset.paused=String(motion.manualPaused);
+  control.dataset.paused=String(motion.matches);
+  control.setAttribute('aria-disabled',String(motion.systemReduced));
+  control.dataset.systemReduced=String(motion.systemReduced);
   if(control.dataset.motionToggle==='standalone')control.hidden=false;
  }
 }
-for(const control of motionControls)if(control.dataset.motionToggle==='standalone')control.addEventListener('click',()=>motion.toggle());
+for(const control of motionControls)if(control.dataset.motionToggle==='standalone')control.addEventListener('click',()=>{if(!motion.systemReduced)motion.toggle();});
 motion.addEventListener('change',updateMotionControls);
 updateMotionControls();

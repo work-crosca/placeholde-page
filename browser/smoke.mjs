@@ -1,12 +1,17 @@
 import assert from 'node:assert/strict';
-import { chromium } from 'playwright';
-import { server } from '../server.js';
+import { chromium, firefox, webkit } from 'playwright';
+const engine=process.env.BROWSER||'chromium';
+const engines={chromium,firefox,webkit};
+if(!engines[engine])throw new Error('Unknown browser: '+engine);
+process.env.SITE_EMAIL='contact@example.com';
+process.env.SITE_TELEGRAM='mirco_test';
+const {server}=await import('../server.js');
 
 await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
 const origin='http://127.0.0.1:'+server.address().port;
 let browser;
 try{
- browser=await chromium.launch();
+ browser=await engines[engine].launch();
  const errors=[];
  for(const viewport of [{width:1440,height:900},{width:600,height:900},{width:320,height:568},{width:844,height:390}]){
   const page=await browser.newPage({viewport});
@@ -28,16 +33,34 @@ try{
   assert.ok(safe,'mascot must not cover content at '+JSON.stringify(viewport));
   if(viewport.width===1440)assert.equal(await mascot.getAttribute('data-placement'),'placed');
   if(viewport.width===1440){
+   await page.locator('body').click({button:'right',position:{x:10,y:10}});
+   await page.locator('#custom-context-menu').waitFor();
+   await page.keyboard.press('End');await page.keyboard.press('Enter');
+   await page.waitForFunction(()=>document.documentElement.dataset.motionPaused==='true');
+   await page.locator('.motion-toggle').click();
+   await page.waitForFunction(()=>document.documentElement.dataset.motionPaused==='false');
    const cursor=await page.evaluate(()=>({
+    fine:matchMedia('(hover:hover) and (pointer:fine)').matches,
     idle:getComputedStyle(document.documentElement).cursor,
     pointer:getComputedStyle(document.querySelector('.motion-toggle')).cursor,
     text:getComputedStyle(document.querySelector('.hero h1')).cursor
    }));
-   assert.match(cursor.idle,/cursor-idle\.svg/);
-   assert.match(cursor.pointer,/cursor-pointer\.svg/);
-   assert.equal(cursor.text,'text');
+   if(cursor.fine){
+    assert.match(cursor.idle,/cursor-idle\.svg/);
+    assert.match(cursor.pointer,/cursor-pointer\.svg/);
+    assert.equal(cursor.text,'text');
+    assert.match(cursor.idle,/\?v=[a-f0-9]{16}/);
+   }else{
+    // Firefox headless can report no fine pointer. Verify the native fallback instead.
+    assert.doesNotMatch(cursor.idle,/cursor-idle\.svg/);
+    assert.doesNotMatch(cursor.pointer,/cursor-pointer\.svg/);
+    console.log(engine+' reports no fine hover pointer; native cursor fallback verified');
+   }
+   if(engine==='chromium'){await page.emulateMedia({forcedColors:'active'});assert.doesNotMatch(await page.locator('html').evaluate(el=>getComputedStyle(el).cursor),/cursor-idle\.svg/);await page.emulateMedia({forcedColors:'none'});}
    for(const path of ['/icons/cursor-idle.svg','/icons/cursor-pointer.svg'])assert.equal((await page.request.get(origin+path)).status(),200);
   }
+  assert.equal(await page.locator('.contact').getAttribute('href'),'mailto:contact@example.com');
+  assert.equal(await page.locator('.social').getAttribute('href'),'https://t.me/mirco_test');
   if(viewport.width===1440){
    await page.keyboard.press('Control+Shift+K');
    const terminal=page.locator('.mirco-terminal');
@@ -66,28 +89,33 @@ try{
   assert.equal(await page.locator('html').getAttribute('data-motion-paused'),'false');
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.waitForFunction(()=>document.documentElement.dataset.motionPaused==='true');
-  await control.click();await control.click();
-  assert.equal(await page.locator('html').getAttribute('data-motion-paused'),'true');
+  assert.equal(await control.getAttribute('aria-disabled'),'true');
+  assert.equal(await control.getAttribute('aria-label'),'Animations paused by system settings');
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await page.waitForFunction(()=>document.documentElement.dataset.motionPaused==='false');
   if(viewport.width===600&&await mascot.isVisible()){
    await mascot.dblclick();
    assert.notEqual(await mascot.getAttribute('data-emotion'),'love');
   }
   await page.close();
  }
- const touch=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+ if(engine!=='firefox'){
+ const touch=await browser.newPage({viewport:{width:390,height:1000},hasTouch:true,isMobile:true});
  touch.on('pageerror',error=>errors.push(String(error)));
  await touch.goto(origin);
  assert.doesNotMatch(await touch.locator('html').evaluate(el=>getComputedStyle(el).cursor),/cursor-idle\.svg/);
  await touch.waitForFunction(()=>['placed','hidden'].includes(document.querySelector('.mascot').dataset.placement));
  const mascot=touch.locator('.mascot');
- if(await mascot.isVisible()){
+ await mascot.waitFor({state:'visible'});
+ {
   const b=await mascot.boundingBox();
   await touch.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);await touch.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);
-  assert.equal(await mascot.getAttribute('data-emotion'),'love');
+  await touch.waitForFunction(()=>document.querySelector('.mascot').dataset.emotion==='love',null,{timeout:2000});
  }
  await touch.close();
+ }
  assert.deepEqual(errors,[]);
- console.log('Chromium smoke: desktop, narrow desktop, mobile, landscape, motion persistence and reduced motion passed');
+ console.log(engine+' smoke: desktop, narrow desktop, mobile, landscape, motion persistence and reduced motion passed');
 }finally{
  await browser?.close();
  await new Promise(resolve=>server.close(resolve));
