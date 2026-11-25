@@ -16,7 +16,7 @@ test('context menu is rendered with localized accessible actions',()=>{
   assert.match(en,/Coming soon/);
   assert.match(en,/Refresh/);
   assert.match(en,/id="context-menu-toast"[^>]*role="status"[^>]*aria-live="polite" hidden/);
-  assert.match(en,/context-menu\.js\?v=1/);
+  assert.match(en,/context-menu\.js\?v=dev/);
   const ro=render(config({SITE_LANGUAGE:'ro'}));
   assert.match(ro,/Opțiuni pagină/);
   assert.match(ro,/Reîmprospătează/);
@@ -45,4 +45,11 @@ test('menu supports keyboard, viewport bounds, outside dismissal and actions',()
   assert.match(script,/toast\.hidden = false/);
   assert.match(script,/pointerType === 'touch'/);
   assert.match(script,/function editable\(target\)/);
+});
+
+test('all animated assets use the same deployment fingerprint',()=>{
+ const html=render(config(),'abc123def456');
+ for(const file of ['style.css','mascot.js','context-menu.js','title-glitch.js','description-typewriter.js','ascii-background.js'])assert.ok(html.includes('/'+file+'?v=abc123def456'));
+ assert.match(server,/createHash\('sha256'\)/);
+ assert.match(server,/render\(settings,assetVersion\)/);
 });
