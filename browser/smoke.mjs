@@ -27,6 +27,17 @@ try{
   });
   assert.ok(safe,'mascot must not cover content at '+JSON.stringify(viewport));
   if(viewport.width===1440)assert.equal(await mascot.getAttribute('data-placement'),'placed');
+  if(viewport.width===1440){
+   const cursor=await page.evaluate(()=>({
+    idle:getComputedStyle(document.documentElement).cursor,
+    pointer:getComputedStyle(document.querySelector('.motion-toggle')).cursor,
+    text:getComputedStyle(document.querySelector('.hero h1')).cursor
+   }));
+   assert.match(cursor.idle,/cursor-idle\.svg/);
+   assert.match(cursor.pointer,/cursor-pointer\.svg/);
+   assert.equal(cursor.text,'text');
+   for(const path of ['/icons/cursor-idle.svg','/icons/cursor-pointer.svg'])assert.equal((await page.request.get(origin+path)).status(),200);
+  }
   const control=page.locator('.motion-toggle');
   await control.click();
   assert.equal(await page.locator('html').getAttribute('data-motion-paused'),'true');
@@ -47,6 +58,7 @@ try{
  const touch=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
  touch.on('pageerror',error=>errors.push(String(error)));
  await touch.goto(origin);
+ assert.doesNotMatch(await touch.locator('html').evaluate(el=>getComputedStyle(el).cursor),/cursor-idle\.svg/);
  await touch.waitForFunction(()=>['placed','hidden'].includes(document.querySelector('.mascot').dataset.placement));
  const mascot=touch.locator('.mascot');
  if(await mascot.isVisible()){

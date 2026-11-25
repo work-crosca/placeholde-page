@@ -75,3 +75,11 @@ html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
 .motion-toggle:focus-visible{outline:2px solid #9fd8ff;outline-offset:3px;border-radius:8px}
 .motion-toggle[data-paused="true"] .motion-pause-icon,.motion-toggle:not([data-paused="true"]) .motion-play-icon{display:none}
 .motion-toggle+.social{margin-left:0}
+
+/* Native custom cursors: no overlay, animation or pointer-event interception. */
+@media (hover:hover) and (pointer:fine){
+ html{cursor:url("/icons/cursor-idle.svg") 12 12,default}
+ a[href],button:not(:disabled),[role="button"]:not([aria-disabled="true"]){cursor:url("/icons/cursor-pointer.svg") 12 12,pointer}
+ .description,.hero h1,input:not([type="button"]):not([type="submit"]):not([type="reset"]),textarea,[contenteditable="true"]{cursor:text}
+ button:disabled,[aria-disabled="true"]{cursor:not-allowed}
+}
