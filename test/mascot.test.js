@@ -9,7 +9,7 @@ function exercise(run,assert){
   let now=1000,raf=0,randomValue=.5;
   const listeners=()=>({events:{},addEventListener(n,f){(this.events[n]??=[]).push(f);},emit(n,e={}){for(const f of this.events[n]||[])f(e);}});
   const node=()=>Object.assign(listeners(),{attrs:{},dataset:{},setAttribute(k,v){this.attrs[k]=String(v);},getBoundingClientRect(){return {left:100,top:200,width:180,height:150};}});
-  const nodes=Object.fromEntries(['#head','#eyes','#eye-left','#eye-right','#mouth','#face','#blush','#screen-shine','#face-glow-alpha','#hearts','#tears','#spiral-eyes','#scared-eyes','#wavy-mouth','#sleep-symbols','#sleep-z1','#sleep-z2','#sleep-z3'].map(k=>[k,node()]));
+  const nodes=Object.fromEntries(['#head','#eyes','#eye-left','#eye-right','#mouth','#face','#blush','#screen-shine','#face-glow-alpha','#hearts','#tears','#spiral-eyes','#spiral-left','#spiral-right','#scared-eyes','#wavy-mouth','#sleep-symbols','#sleep-z1','#sleep-z2','#sleep-z3'].map(k=>[k,node()]));
   const svg=Object.assign(node(),{querySelector:k=>nodes[k]});
   const button=Object.assign(node(),{querySelector:()=>svg});
   const root=listeners(),win=Object.assign(listeners(),{scrollY:0,innerWidth:1000,dispatchEvent(){}});
@@ -25,15 +25,15 @@ function exercise(run,assert){
   exit(0);assert.equal(button.dataset.emotion,'angry');assert.equal(button.dataset.state,'context');
   frame();assert.equal(nodes['#face'].attrs.stroke,'#ff777e');
   frame(35000);assert.equal(button.dataset.emotion,'angry');
-  root.emit('pointerenter',{pointerType:'mouse'});frame();assert.equal(button.dataset.emotion,'neutral');assert.equal(nodes['#face'].attrs.stroke,'#9fd8ff');
-  exit(0);win.emit('pointermove',{pointerType:'mouse',clientX:120,clientY:100});frame();assert.notEqual(button.dataset.emotion,'angry');assert.equal(nodes['#face'].attrs.stroke,'#9fd8ff');
+  root.emit('pointerenter',{pointerType:'mouse'});frame();assert.equal(button.dataset.emotion,'neutral');assert.ok(reduced?nodes['#face'].attrs.stroke==='#b9e7ff':nodes['#face'].attrs.stroke!=='#ff777e');
+  exit(0);win.emit('pointermove',{pointerType:'mouse',clientX:120,clientY:100});frame();assert.notEqual(button.dataset.emotion,'angry');assert.ok(reduced?nodes['#face'].attrs.stroke==='#b9e7ff':nodes['#face'].attrs.stroke!=='#ff777e');
   exit(0);win.emit('blur');frame();assert.equal(button.dataset.emotion,'angry');
   doc.emit('visibilitychange');frame();assert.equal(button.dataset.emotion,'neutral');
   // Preview before browser chrome takes over; no animation frame is required.
   const move=(y,x=180)=>win.emit('pointermove',{pointerType:'mouse',clientX:x,clientY:y});
   move(60);move(10);assert.equal(button.dataset.emotion,'angry');
   assert.equal(nodes['#face'].attrs.stroke,'#ff777e');
-  assert.equal(nodes['#eye-left'].attrs.d,'M72 72Q85 80 98 86');
+  assert.equal(nodes['#eye-left'].attrs.d,'M67 69Q82 77 97 85');
   move(40);frame();assert.equal(button.dataset.emotion,'neutral');
   // A fast departure may report a last in-page coordinate instead of y=0.
   move(100);move(35);
@@ -51,8 +51,9 @@ function exercise(run,assert){
   button.emit('click',{pointerType:'touch',detail:1});frame(100);
   let lastChosen=button.dataset.emotion;
   button.emit('click',{pointerType:'touch',detail:1});frame(100);
-  assert.equal(button.dataset.emotion,'love');assert.equal(nodes['#face'].attrs.stroke,'#f9a1cb');
-  for(let i=0;i<15;i++)frame(16);
+  assert.equal(button.dataset.emotion,'love');assert.ok(reduced?nodes['#face'].attrs.stroke==='#f9a1cb':nodes['#face'].attrs.stroke!=='#f9a1cb');
+  for(let i=0;i<45;i++)frame(16);
+  assert.equal(nodes['#face'].attrs.stroke,'#f9a1cb');
   assert.ok(Number(nodes['#blush'].attrs.opacity)>.3);assert.ok(Number(nodes['#hearts'].attrs.opacity)>.8);
   assert.ok(Number(nodes['#face-glow-alpha'].attrs.slope)>.3);
   if(!reduced){frame(33000);for(let i=0;i<40;i++)frame(16);assert.equal(button.dataset.emotion,'sleepy');assert.ok(Number(nodes['#face'].attrs.opacity)<.65);}
@@ -68,6 +69,7 @@ function exercise(run,assert){
    assert.ok(name==='dizzy'?Number(nodes['#wavy-mouth'].attrs.opacity)>.95:Number(nodes['#wavy-mouth'].attrs.opacity)<.05);
    assert.ok(name==='scared'||name==='dizzy'?Number(nodes['#eye-left'].attrs.opacity)<.05:Number(nodes['#eye-left'].attrs.opacity)>.95);
    if(name==='laughing')assert.ok(Number(nodes['#mouth'].attrs['fill-opacity'])>.95);
+   if(name==='dizzy'){assert.match(nodes['#spiral-left'].attrs.transform,/82 77/);assert.match(nodes['#spiral-right'].attrs.transform,/158 77/);}
    if(name==='proud')assert.ok(nodes['#head'].attrs.transform.includes('rotate(-'));
    move(60);move(10);assert.equal(button.dataset.emotion,'angry');assert.equal(nodes['#face'].attrs.stroke,'#ff777e');assert.equal(Number(nodes['#tears'].attrs.opacity),0);assert.equal(Number(nodes['#spiral-eyes'].attrs.opacity),0);assert.equal(Number(nodes['#scared-eyes'].attrs.opacity),0);move(80);frame();
   }
@@ -87,7 +89,9 @@ function exercise(run,assert){
    const glyph=nodes['#sleep-z1'].attrs.transform,headPose=nodes['#head'].attrs.transform;
    frame(100);assert.notEqual(nodes['#sleep-z1'].attrs.transform,glyph);assert.notEqual(nodes['#head'].attrs.transform,headPose);
    move(100);assert.equal(button.dataset.state,'waking');assert.equal(button.dataset.emotion,'neutral');
-   frame(449);assert.equal(button.dataset.state,'waking');
+   frame(100);assert.ok(Number(nodes['#eye-left'].attrs['stroke-width'])<8);
+   frame(200);assert.ok(Number(nodes['#eye-left'].attrs['stroke-width'])<8);
+   frame(149);assert.equal(button.dataset.state,'waking');
    move(100);frame(1);assert.equal(button.dataset.emotion,'happy');
    frame(1000);assert.equal(button.dataset.emotion,'neutral');
    for(let i=0;i<20;i++)frame(16);assert.ok(Number(nodes['#sleep-symbols'].attrs.opacity)<.05);
@@ -95,7 +99,9 @@ function exercise(run,assert){
    doc.emit('visibilitychange');frame(30000);win.scrollY=10;win.emit('scroll');assert.equal(button.dataset.state,'waking');
    doc.emit('visibilitychange');frame(32000);contact.emit('pointerenter',{pointerType:'mouse'});assert.equal(button.dataset.emotion,'excited');frame(40000);assert.equal(button.dataset.emotion,'excited');contact.emit('pointerleave');frame();assert.equal(button.dataset.emotion,'neutral');
    frame(32000);social.emit('pointerenter',{pointerType:'mouse'});assert.equal(button.dataset.emotion,'curious');social.emit('pointerleave');frame(32000);move(60);move(10);assert.equal(button.dataset.emotion,'angry');assert.equal(Number(nodes['#sleep-symbols'].attrs.opacity),0);
-   move(100);doc.emit('visibilitychange');frame(32000);win.emit('pointerdown',{pointerType:'touch',isPrimary:true,clientX:100,clientY:100});assert.equal(button.dataset.state,'waking');
+   move(100);doc.emit('visibilitychange');move(160,500);for(let i=0;i<15;i++)frame(16);assert.notEqual(nodes['#mouth'].attrs.transform,'translate(0 0)');
+   doc.emit('visibilitychange');randomValue=.75;for(let i=0;i<3;i++){frame(8000);assert.ok(!['angry','crying','scared'].includes(button.dataset.emotion));frame(2000);}
+   doc.emit('visibilitychange');frame(32000);win.emit('pointerdown',{pointerType:'touch',isPrimary:true,clientX:100,clientY:100});assert.equal(button.dataset.state,'waking');
   }else{frame(40000);assert.notEqual(button.dataset.state,'sleeping');assert.equal(button.dataset.emotion,'neutral');}
  }
  scenario();scenario(true);
