@@ -61,4 +61,5 @@ header,footer,.hero > .contact{z-index:11}
 button,input,select,textarea{font-family:inherit}
 
 /* Keep selected copy legible against the dark MIRCO palette. */
-::selection{background:#9fd8ff;color:#191717;-webkit-text-fill-color:#191717}
+::selection{background:#9fd8ff;color:#191717;text-shadow:none;-webkit-text-fill-color:#191717}
+.title-text::selection{-webkit-text-fill-color:#191717;color:#191717;background-color:#9fd8ff}
