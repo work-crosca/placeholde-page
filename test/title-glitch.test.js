@@ -14,11 +14,11 @@ function harness(){
  function step(){const [key,job]=jobs.entries().next().value;jobs.delete(key);job.fn();return job.ms;}
  return {listeners,jobs,classes,motion,doc,layers,controller,step};
 }
-test('glitch layers are hidden outside the 320ms animation',()=>{
+test('glitch layers are hidden outside the 460ms animation',()=>{
  const h=harness();assert.ok(h.layers.every(layer=>layer.hidden));
- assert.equal(h.step(),6500);assert.ok(h.classes.has('is-glitching'));
+ assert.equal(h.step(),1800);assert.ok(h.classes.has('is-glitching'));
  assert.ok(h.layers.every(layer=>!layer.hidden));
- assert.equal(h.step(),320);assert.ok(h.layers.every(layer=>layer.hidden));
+ assert.equal(h.step(),460);assert.ok(h.layers.every(layer=>layer.hidden));
  assert.ok(!h.classes.has('is-glitching'));h.controller.dispose();
  assert.equal(h.jobs.size,0);
 });

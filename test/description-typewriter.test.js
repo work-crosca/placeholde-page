@@ -23,16 +23,17 @@ test('all locales have eight distinct phrases and accessible rotation markup',()
   assert.match(html,/description-typewriter\.js/);
  }
 });
-test('custom and maintenance copy remain static',()=>{
- for(const env of [{SITE_DESCRIPTION:'Custom text'},{SITE_MODE:'maintenance'}]){
+test('custom descriptions join the phrase pool unless disabled',()=>{
+ const custom=config({SITE_DESCRIPTION:'Custom text'});assert.equal(custom.phrases[0],'Custom text');assert.equal(custom.phrases.length,9);assert.match(render(custom),/data-typewriter=/);
+ for(const env of [{SITE_TYPEWRITER:'false'},{SITE_MODE:'maintenance'}]){
   assert.equal(config(env).phrases.length,0);
   assert.doesNotMatch(render(config(env)),/data-typewriter=/);
  }
 });
-test('phrases rotate without repetition and hold for at least five seconds',()=>{
+test('phrases rotate without repetition and begin quickly then hold for at least five seconds',()=>{
  const h=harness();
  assert.equal(h.node.textContent,'First.');
- assert.equal(h.step(),5000);
+ assert.equal(h.step(),1800);
  h.until('Second.');
  h.until('Third.');
  h.until('First.');

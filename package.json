@@ -10,9 +10,10 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test",
-    "build": "node --check server.js && node --check public/mascot.js && node --check src/page.js && node --check public/ascii-background.js && node --check public/context-menu.js && node --check public/title-glitch.js && node --check public/description-typewriter.js"
+    "build": "node --check server.js && node --check public/mascot.js && node --check src/page.js && node --check public/ascii-background.js && node --check public/context-menu.js && node --check public/title-glitch.js && node --check public/description-typewriter.js && node --check public/analytics.js"
   },
   "dependencies": {
+    "@fontsource-variable/space-grotesk": "5.1.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-icons": "5.5.0"

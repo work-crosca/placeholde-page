@@ -27,7 +27,8 @@ if(canvas){
     const u=x/Math.max(1,width),v=y/Math.max(1,height);
     const wave=Math.sin(u*14+v*7+t)+.65*Math.cos(v*15-u*9-t*.8)+.45*Math.sin((u+v)*22+t*.6);
     const density=Math.max(0,Math.min(1,(wave+.45)/2.55));
-    const ripple=Math.max(0,...ripples.map(r=>Math.max(0,1-Math.abs(Math.hypot(x-r.x,y-r.y)-(time-r.t)*.28)/35)*(1-(time-r.t)/1400)));
+    let ripple=0;
+     for(const r of ripples){const age=time-r.t;ripple=Math.max(ripple,Math.max(0,1-Math.abs(Math.hypot(x-r.x,y-r.y)-age*.28)/35)*(1-age/1400));}
     if(density<.17&&ripple<.08)continue;
     const mask=.16+.84*Math.pow(u,1.7);
     const alpha=Math.min(.65,(.045+.17*density)*mask+ripple*.5);
@@ -46,7 +47,8 @@ if(canvas){
   if(document.hidden)return;
   if(motion.matches)draw(0);else frame=requestAnimationFrame(tick);
  }
- const observer=new ResizeObserver(resize);observer.observe(canvas);
+ if(typeof ResizeObserver==='function'){const observer=new ResizeObserver(resize);observer.observe(canvas);}
+  else window.addEventListener('resize',resize,{passive:true});
  motion.addEventListener('change',sync);
  document.addEventListener('visibilitychange',sync);
  resize();sync();
