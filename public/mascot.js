@@ -2,6 +2,7 @@
 const button=document.querySelector('.mascot');
 if(button){
 const svg=button.querySelector('svg'),head=svg.querySelector('#head'),eyes=svg.querySelector('#eyes'),left=svg.querySelector('#eye-left'),right=svg.querySelector('#eye-right'),mouth=svg.querySelector('#mouth'),face=svg.querySelector('#face'),blush=svg.querySelector('#blush'),shine=svg.querySelector('#screen-shine'),glow=svg.querySelector('#face-glow-alpha'),hearts=svg.querySelector('#hearts'),tears=svg.querySelector('#tears'),spirals=svg.querySelector('#spiral-eyes'),scaredEyes=svg.querySelector('#scared-eyes'),wavyMouth=svg.querySelector('#wavy-mouth'),sleep=svg.querySelector('#sleep-symbols');
+const sleepGlyphs=['#sleep-z1','#sleep-z2','#sleep-z3'].map(id=>svg.querySelector(id));
 const motion=matchMedia('(prefers-reduced-motion: reduce)');
 const mobile=matchMedia('(max-width: 700px), (pointer: coarse)');
 let browserExit=null,edgeMouse=null,lastInput='mouse',touchUntil=0,press=null,pressTimer=0,suppressClick=false,lastTouchTap=-Infinity,lastScroll=window.scrollY,scrollAt=-Infinity;
@@ -14,7 +15,7 @@ const poses={
  neutral:[N,N,7,0],happy:[E(13,0,-23,8),E(13,0,-23,8),11,.65],
  sad:[E(11,-5,11,8),E(11,5,11,8),-13,0],
  surprised:[E(0,12,0,25),E(0,12,0,25),0,1],
- sleepy:[E(12,0,7,4),E(12,0,7,4),0,.45],
+ sleepy:[E(12,0,7,4),E(12,0,7,4),0,.22],
  love:[E(0,8,0,12),E(0,8,0,12),12,0],
  suspicious:[E(11,4,0,7),E(11,-4,0,7),-4,0],
  bored:[E(12,0,0,6),E(12,0,0,6),-3,0],
@@ -29,14 +30,18 @@ const poses={
  scared:[E(0,12,0,23),E(0,12,0,23),0,1],
  crying:[E(12,-7,-2,8),E(12,7,-2,8),-15,0],
  dizzy:[E(0,10,0,18),E(0,10,0,18),0,0],
- proud:[E(12,0,10,6),E(12,0,10,6),10,0]
+ proud:[E(12,0,10,6),E(12,0,10,6),10,0],
+ drowsy:[E(8,2,3,10),E(8,2,3,10),-3,0],
+ 'slow-blink':[E(12,0,4,3),E(12,0,4,3),-3,0],
+ yawning:[E(12,0,7,5),E(12,0,7,5),0,1]
 };
-const names=Object.keys(poses).filter(n=>!['neutral','blink','sleepy','wink'].includes(n));
+const names=Object.keys(poses).filter(n=>!['neutral','blink','sleepy','wink','drowsy','slow-blink','yawning'].includes(n));
 // Additional interpolated channels: blush, glow strength and screen-face brightness.
-const accents={love:[.48,.38,1],shy:[.65,.25,1],excited:[.12,.58,1],happy:[.12,.35,1],sleepy:[0,.08,.55],surprised:[0,.42,1],angry:[0,.40,1],laughing:[.28,.48,1],scared:[0,.34,1],crying:[0,.2,.9],dizzy:[0,.24,1],proud:[.16,.32,1]};
+const accents={love:[.48,.38,1],shy:[.65,.25,1],excited:[.12,.58,1],happy:[.12,.35,1],sleepy:[0,.08,.55],surprised:[0,.42,1],angry:[0,.40,1],laughing:[.28,.48,1],scared:[0,.34,1],crying:[0,.2,.9],dizzy:[0,.24,1],proud:[.16,.32,1],drowsy:[0,.15,.82],'slow-blink':[0,.12,.78],yawning:[0,.12,.76]};
 const colors={angry:'#ff777e',love:'#f9a1cb',sad:'#81aef3',sleepy:'#759fc4',scared:'#d0eaff',crying:'#81b8ff',dizzy:'#c3b7ff'};
 // Extra channels: tears, spiral eyes, hollow eyes, mouth width, wavy mouth, proud tilt, laugh bounce.
-const vector=n=>[...poses[n][0],...poses[n][1],...poses[n].slice(2),n==='love'?1:0,...(accents[n]||[0,.22,1]),n==='crying'?1:0,n==='dizzy'?1:0,n==='scared'?1:0,n==='laughing'?10:n==='proud'?3:0,n==='dizzy'?1:0,n==='proud'?-5:0,n==='laughing'?1:0];
+const DROWSY_IDLE=20000,YAWN_IDLE=30000,ASLEEP_IDLE=32000,WAKE_OPEN=450,WAKE_SMILE=1000;
+const vector=n=>[...poses[n][0],...poses[n][1],...poses[n].slice(2),n==='love'?1:0,...(accents[n]||[0,.22,1]),n==='crying'?1:0,n==='dizzy'?1:0,n==='scared'?1:0,n==='laughing'?10:n==='proud'?3:0,n==='dizzy'?1:0,n==='proud'?-5:0,n==='laughing'?1:0,n==='sleepy'?1:0];
 let current=vector('neutral'),target=current.slice(),state='idle',emotion='neutral',lastEmotion='',until=0,frame=0,previous=0,activity=performance.now(),idleAt=activity+random(4000,8000),blinkAt=activity+random(3000,6000),secondBlink=0,hover=null,pointer=null,gx=0,gy=0,hx=0,hy=0,tilt=0,pulse=0,clicks=0,lastClick=-Infinity,lastPointer=null,lastFast=-Infinity,near=false;
 function set(name,next='reaction',duration=1400,now=performance.now()){
  emotion=name;state=next;until=now+duration;target=vector(name);button.dataset.emotion=name;button.dataset.state=next;
@@ -44,7 +49,8 @@ function set(name,next='reaction',duration=1400,now=performance.now()){
 }
 function choose(){const a=names.filter(n=>n!==lastEmotion);return lastEmotion=a[Math.floor(Math.random()*a.length)];}
 function paint(now,dt){
- const k=motion.matches?1:1-Math.exp(-dt/55);
+ const slow=['drowsy','yawning','sleeping','waking'].includes(state);
+ const k=motion.matches?1:1-Math.exp(-dt/(slow?180:55));
  current=current.map((v,i)=>v+(target[i]-v)*k);
  for(const [el,x,offset] of [[left,85,0],[right,155,5]]){
   const [w,h,c,s,o]=current.slice(offset,offset+5);
@@ -53,7 +59,11 @@ function paint(now,dt){
  }
  hearts.setAttribute('opacity',current[12]);
  tears.setAttribute('opacity',current[16]);spirals.setAttribute('opacity',current[17]);scaredEyes.setAttribute('opacity',current[18]);wavyMouth.setAttribute('opacity',current[20]);mouth.setAttribute('opacity',1-current[20]);
- const smile=current[10],open=current[11];
+ const smile=current[10],sleepAmount=current[23];
+ const breathing=motion.matches?0:Math.sin(now/1750);
+ // Gradual yawn: opens, peaks at one second and closes before sleep.
+ const yawnProgress=state==='yawning'?clamp((now-activity-YAWN_IDLE)/(ASLEEP_IDLE-YAWN_IDLE),0,1):0;
+ const open=state==='yawning'?current[11]*Math.sin(Math.PI*yawnProgress):clamp(current[11]+breathing*.08*sleepAmount,0,1);
  const mw=10-open*4+current[19];
  mouth.setAttribute('d',`M${120-mw} 116Q120 ${116+smile+open*14} ${120+mw} 116Q120 ${116+smile-open*22} ${120-mw} 116Z`);
  mouth.setAttribute('fill-opacity',open);
@@ -63,7 +73,7 @@ function paint(now,dt){
  let aim=browserExit?{x:browserExit.x,y:-100}:pointer;
  if(!browserExit&&hover){const b=hover.el.getBoundingClientRect();aim={x:b.left+b.width/2,y:b.top+b.height/2};}
  let tx=0,ty=0;
- if(aim&&state!=='sleeping'&&!motion.matches){const b=svg.getBoundingClientRect();tx=clamp((aim.x-b.left-b.width/2)/Math.max(75,b.width*1.25),-1,1);ty=clamp((aim.y-b.top-b.height/2)/Math.max(75,b.width*1.25),-1,1);}
+ if(aim&&!['sleeping','yawning','drowsy'].includes(state)&&!motion.matches){const b=svg.getBoundingClientRect();tx=clamp((aim.x-b.left-b.width/2)/Math.max(75,b.width*1.25),-1,1);ty=clamp((aim.y-b.top-b.height/2)/Math.max(75,b.width*1.25),-1,1);}
  const ek=1-Math.exp(-dt/65),hk=1-Math.exp(-dt/150);
  gx+=(tx*14-gx)*ek;gy+=(ty*10-gy)*ek;hx+=(tx*3-hx)*hk;hy+=(ty*2-hy)*hk;tilt+=(tx*4-tilt)*hk;
  if(motion.matches)gx=gy=hx=hy=tilt=0;
@@ -76,15 +86,30 @@ function paint(now,dt){
  scaredEyes.setAttribute('transform',`translate(${gx} ${gy})`);
  blush.setAttribute('transform',`translate(${gx*.35} ${gy*.35})`);
  shine.setAttribute('transform',`translate(${gx*.48} ${gy*.35})`);
- const breathe=motion.matches?0:Math.sin(now/1000)*1.8+Math.sin(now/85)*2.5*current[22];
+ const breathe=motion.matches?0:Math.sin(now/1000)*1.8*(1-sleepAmount)+(3+breathing*2.2)*sleepAmount+Math.sin(now/85)*2.5*current[22];
  pulse*=Math.exp(-dt/170);
- const squash=motion.matches?0:Math.sin(pulse*Math.PI)*.09;
+ const squash=motion.matches?0:Math.sin(pulse*Math.PI)*.09+breathing*.012*sleepAmount;
  const elapsed=browserExit?now-browserExit.at:Infinity;
  const shake=motion.matches||elapsed>=420?0:Math.sin(elapsed/25)*3*(1-elapsed/420);
- head.setAttribute('transform',`translate(${hx+shake} ${hy+breathe}) rotate(${tilt+current[21]} 120 90) translate(120 90) scale(${1+squash} ${1-squash}) translate(-120 -90)`);
- sleep.setAttribute('opacity',state==='sleeping'?'0.85':'0');
+ head.setAttribute('transform',`translate(${hx+shake} ${hy+breathe}) rotate(${tilt+current[21]+(motion.matches?0:(5+breathing*.65)*sleepAmount)} 120 90) translate(120 90) scale(${1+squash} ${1-squash}) translate(-120 -90)`);
+ // Staggered rising Zs: each glyph fades in, drifts upward/right, and fades out.
+ sleep.setAttribute('opacity',.9*sleepAmount);
+ if(sleepAmount>.001){
+  for(const [i,glyph] of sleepGlyphs.entries()){
+   const phase=motion.matches?.45:((now/2600+i/3)%1);
+   glyph.setAttribute('opacity',Math.sin(Math.PI*phase));
+   glyph.setAttribute('transform',`translate(${192+phase*36} ${48-phase*42}) scale(${.75+phase*.45})`);
+  }
+ }
 }
-function resume(now){activity=now;idleAt=now+random(4000,8000);if(state==='sleeping'){set('happy','reaction',1000,now);}}
+function resume(now){
+ activity=now;idleAt=now+random(4000,8000);
+ if(['sleeping','yawning','drowsy'].includes(state)){
+  blinkAt=now+random(3000,6000);secondBlink=0;
+  set('neutral','waking',WAKE_OPEN,now);
+ }
+}
+function endContext(now){resume(now);blinkAt=now+random(3000,6000);secondBlink=0;normal(now);}
 function normal(now){set('neutral',pointer?'tracking':'idle',Infinity,now);}
 function tick(now){
  frame=0;if(document.hidden||motion.matches)return;
@@ -93,8 +118,15 @@ function tick(now){
  const dt=Math.min(50,Math.max(1,now-(previous||now-16)));previous=now;
  if(browserExit){if(emotion!=='angry'||state!=='context')set('angry','context',Infinity,now);}
  else if(hover){if(emotion!==hover.name)set(hover.name,'context',Infinity,now);}
- else if(state==='context')normal(now);
- else if(now-activity>=30000&&state!=='sleeping')set('sleepy','sleeping',Infinity,now);
+ else if(state==='context')endContext(now);
+ else if(state==='waking'){if(now>=until)set('happy','reaction',WAKE_SMILE,now);}
+ else if(now-activity>=ASLEEP_IDLE){if(state!=='sleeping')set('sleepy','sleeping',Infinity,now);}
+ else if(now-activity>=YAWN_IDLE){if(state!=='yawning')set('yawning','yawning',Infinity,now);}
+ else if(now-activity>=DROWSY_IDLE){
+  const phase=(now-activity-DROWSY_IDLE)%4000;
+  const pose=phase>=2000&&phase<2650?'slow-blink':'drowsy';
+  if(state!=='drowsy'||emotion!==pose)set(pose,'drowsy',Infinity,now);
+ }
  else if(state==='reaction'&&now>=until)normal(now);
  else if(['idle','tracking'].includes(state)){
   if(now>=idleAt&&now-activity>=4000){set(choose(),'reaction',random(1000,2000),now);idleAt=now+random(4000,8000);}
@@ -169,9 +201,11 @@ function explicit(name,now=performance.now(),duration=1400){
  if(motion.matches){clearTimeout(reducedTimer);reducedTimer=setTimeout(()=>normal(performance.now()),duration);}
 }
 window.addEventListener('pointerdown',e=>{
- if(e.pointerType!=='touch'||!e.isPrimary)return;
+ if(e.isPrimary===false)return;
+ const now=performance.now();
+ if(e.pointerType!=='touch'){resume(now);return;}
  lastInput='touch';edgeMouse=null;endBrowserExit();
- const now=performance.now();resume(now);
+ resume(now);
  if(!motion.matches){pointer={x:e.clientX,y:e.clientY};touchUntil=now+1500;}
 },{passive:true});
 button.addEventListener('pointerdown',e=>{
@@ -199,14 +233,16 @@ button.addEventListener('click',e=>{
 });
 window.addEventListener('scroll',()=>{
  const y=window.scrollY,delta=y-lastScroll;lastScroll=y;
- if(!mobile.matches||motion.matches||Math.abs(delta)<2)return;
+ if(Math.abs(delta)<2)return;
  const now=performance.now();resume(now);
+ if(!mobile.matches||motion.matches)return;
  if(now-scrollAt<70)return;scrollAt=now;
  const b=svg.getBoundingClientRect();pointer={x:b.left+b.width/2,y:b.top+b.height/2+Math.sign(delta)*b.width};touchUntil=now+900;
 },{passive:true});
+window.addEventListener('keydown',()=>resume(performance.now()));
 const contexts=[['.contact','excited'],['.social','curious'],['.hero h1','curious']];
 for(const [selector,name] of contexts){const el=document.querySelector(selector);if(!el)continue;let inside=false,focused=false;
- function update(){if(browserExit)return;const now=performance.now();if(inside||focused){resume(now);hover={el,name};set(name,'context',Infinity,now);}else if(hover?.el===el){hover=null;normal(now);}}
+ function update(){if(browserExit)return;const now=performance.now();if(inside||focused){resume(now);hover={el,name};set(name,'context',Infinity,now);}else if(hover?.el===el){hover=null;endContext(now);}}
  el.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch'){inside=true;update();}});el.addEventListener('pointerleave',()=>{inside=false;update();});
  if(selector!=='.hero h1'){
   let touchAt=-Infinity;
