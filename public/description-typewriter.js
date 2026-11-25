@@ -1,3 +1,4 @@
+import {motion as sharedMotion} from './motion-preference.js';
 // Rotate complete phrases without announcing individual keystrokes to assistive technology.
 export function createTypewriter({node,phrases,motion,document:doc,setTimer,clearTimer,random=Math.random,onActiveChange=()=>{}}){
  const pool=[...new Set(phrases.filter(p=>typeof p==='string'&&p.length))];
@@ -39,7 +40,7 @@ if(typeof document!=='undefined'){
   const measure=wrapper.querySelector('.typewriter-measure');
   const display=wrapper.querySelector('.typewriter-display');
   if(node&&measure&&display&&Array.isArray(phrases)&&new Set(phrases.filter(p=>typeof p==='string'&&p.length)).size>1){
-   const motion=matchMedia('(prefers-reduced-motion: reduce)');
+   const motion=sharedMotion;
    wrapper.classList.add('is-typewriter');
    measure.hidden=false;display.hidden=false;
    createTypewriter({node,phrases,motion,document,setTimer:(fn,ms)=>window.setTimeout(fn,ms),clearTimer:id=>window.clearTimeout(id),onActiveChange:running=>wrapper.classList.toggle('is-typewriter-paused',!running)});

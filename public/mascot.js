@@ -1,11 +1,15 @@
+import {motion} from './motion-preference.js';
+import {names,idleNames,colors,baseColor,rgb,hexColor,DROWSY_IDLE,YAWN_IDLE,ASLEEP_IDLE,WAKE_OPEN,WAKE_SMILE,vector} from './mascot/expressions.js';
+import {attachPlacement} from './mascot/placement.js';
 // Original parametric SVG animation. One state controller owns all expressions.
 const button=document.querySelector('.mascot');
 if(button){
 const svg=button.querySelector('svg'),head=svg.querySelector('#head'),eyes=svg.querySelector('#eyes'),left=svg.querySelector('#eye-left'),right=svg.querySelector('#eye-right'),mouth=svg.querySelector('#mouth'),face=svg.querySelector('#face'),blush=svg.querySelector('#blush'),shine=svg.querySelector('#screen-shine'),glow=svg.querySelector('#face-glow-alpha'),hearts=svg.querySelector('#hearts'),tears=svg.querySelector('#tears'),spirals=svg.querySelector('#spiral-eyes'),scaredEyes=svg.querySelector('#scared-eyes'),wavyMouth=svg.querySelector('#wavy-mouth'),sleep=svg.querySelector('#sleep-symbols');
 const spiralLeft=svg.querySelector('#spiral-left'),spiralRight=svg.querySelector('#spiral-right');
 const sleepGlyphs=['#sleep-z1','#sleep-z2','#sleep-z3'].map(id=>svg.querySelector(id));
-const motion=matchMedia('(prefers-reduced-motion: reduce)');
+// The shared motion preference is provided by the ES module import.
 const mobile=matchMedia('(max-width: 700px), (pointer: coarse)');
+const coarse=matchMedia('(pointer: coarse)');
 let browserExit=null,edgeMouse=null,lastInput='mouse',touchUntil=0,press=null,pressTimer=0,suppressClick=false,lastTouchTap=-Infinity,lastScroll=window.scrollY,scrollAt=-Infinity;
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const random=(a,b)=>a+Math.random()*(b-a);
@@ -23,45 +27,7 @@ function attr(el,key,value){
  let last=attributes.get(el);if(!last){last=new Map();attributes.set(el,last);}
  if(last.get(key)!==v){last.set(key,v);el.setAttribute(key,v);}
 }
-// Eye geometry: horizontal half-span, vertical half-span, curve, stroke, offset.
-const E=(w=0,h=11,c=0,s=26,o=0)=>[w,h,c,s,o];
-const N=E();
-const poses={
- neutral:[N,N,12,0],happy:[E(15,0,-25,9),E(15,0,-25,9),14,0],
- sad:[E(12,-6,7,9,2),E(12,6,7,9,2),-13,0],
- surprised:[E(0,13,0,29),E(0,13,0,29),0,1],
- sleepy:[E(14,0,8,4,3),E(14,0,8,4,3),0,.12],
- love:[E(0,10,0,24),E(0,10,0,24),16,0],
- suspicious:[E(13,3,0,7),E(12,-2,0,6,3),-3,0],
- bored:[E(14,0,0,7,3),E(14,0,0,7,3),0,0],
- confused:[E(12,3,-10,9),E(10,-4,5,8,5),-6,0],
- excited:[E(16,0,-28,10),E(16,0,-28,10),14,.85],
- shy:[E(11,0,-14,8,6),E(11,0,-14,8,6),10,0],
- angry:[E(15,8,0,11),E(15,-8,0,11),-14,0],
- curious:[E(0,13,0,26),E(0,6,0,17,3),7,0],
- wink:[E(0,11,0,24),E(13,0,-7,6),12,0],
- blink:[E(13,0,0,3),E(13,0,0,3),8,0],
- laughing:[E(16,0,-30,9),E(16,0,-30,9),16,1],
- scared:[E(0,12,0,24),E(0,12,0,24),-4,.9],
- crying:[E(13,-8,-3,8),E(13,8,-3,8),-16,0],
- dizzy:[E(0,10,0,22),E(0,10,0,22),0,0],
- proud:[E(14,0,10,7),E(14,0,10,7),13,0],
- drowsy:[E(10,1,4,11,3),E(10,1,4,11,3),-1,0],
- 'slow-blink':[E(13,0,5,3,4),E(13,0,5,3,4),-1,0],
- yawning:[E(14,0,8,5,3),E(14,0,8,5,3),0,1]
-};
-const names=Object.keys(poses).filter(n=>!['neutral','blink','sleepy','wink','drowsy','slow-blink','yawning'].includes(n));
-const idleNames=names.filter(n=>!['angry','crying','scared'].includes(n));
-// Additional interpolated channels: blush, glow strength and screen-face brightness.
-const accents={love:[.48,.38,1],shy:[.65,.25,1],excited:[.12,.58,1],happy:[.12,.35,1],sleepy:[0,.08,.55],surprised:[0,.42,1],angry:[0,.40,1],laughing:[.28,.48,1],scared:[0,.34,1],crying:[0,.2,.9],dizzy:[0,.24,1],proud:[.16,.32,1],drowsy:[0,.15,.82],'slow-blink':[0,.12,.78],yawning:[0,.12,.76]};
-const colors={angry:'#ff777e',love:'#f9a1cb',sad:'#81aef3',sleepy:'#759fc4',scared:'#d0eaff',crying:'#81b8ff',dizzy:'#c3b7ff'};
-// Extra channels: tears, spiral eyes, hollow eyes, mouth width, wavy mouth, proud tilt, laugh bounce.
-const baseColor='#b9e7ff';
-const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
-const hexColor=channels=>'#'+channels.map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
 let faceRgb=rgb(baseColor),poseAt=0;
-const DROWSY_IDLE=20000,YAWN_IDLE=30000,ASLEEP_IDLE=32000,WAKE_OPEN=450,WAKE_SMILE=1000;
-const vector=n=>[...poses[n][0],...poses[n][1],...poses[n].slice(2),n==='love'?1:0,...(accents[n]||[0,.22,1]),n==='crying'?1:0,n==='dizzy'?1:0,n==='scared'?1:0,n==='laughing'?10:n==='proud'?3:0,n==='dizzy'?1:0,n==='proud'?-5:0,n==='laughing'?1:0,n==='sleepy'?1:0];
 let current=vector('neutral'),target=current.slice(),state='idle',emotion='neutral',lastEmotion='',until=0,frame=0,previous=0,activity=performance.now(),idleAt=activity+random(4000,8000),blinkAt=activity+random(3000,6000),secondBlink=0,hover=null,pointer=null,gx=0,gy=0,hx=0,hy=0,tilt=0,pulse=0,clicks=0,lastClick=-Infinity,lastPointer=null,lastFast=-Infinity,near=false;
 function set(name,next='reaction',duration=1400,now=performance.now()){
  clearTimeout(reducedTimer);reducedTimer=undefined;
@@ -153,7 +119,7 @@ function resume(now){
 function endContext(now){resume(now);blinkAt=now+random(3000,6000);secondBlink=0;normal(now);}
 function normal(now){set('neutral',pointer?'tracking':'idle',Infinity,now);}
 function tick(now){
- frame=0;if(document.hidden||motion.matches)return;
+ frame=0;if(document.hidden||motion.matches||button.dataset.placement==='hidden')return;
  if((mobile.matches||state==='sleeping')&&previous&&now-previous<1000/30-1){frame=requestAnimationFrame(tick);return;}
  if(touchUntil&&now>=touchUntil){pointer=null;touchUntil=0;}
  const dt=Math.min(50,Math.max(1,now-(previous||now-16)));previous=now;
@@ -175,7 +141,7 @@ function tick(now){
  }
  paint(now,dt);frame=requestAnimationFrame(tick);
 }
-function start(){cancelAnimationFrame(frame);frame=0;previous=0;if(!document.hidden&&!motion.matches)frame=requestAnimationFrame(tick);}
+function start(){cancelAnimationFrame(frame);frame=0;previous=0;if(!document.hidden&&!motion.matches&&button.dataset.placement!=='hidden')frame=requestAnimationFrame(tick);}
 function ripple(){if(motion.matches)return;const b=bounds();window.dispatchEvent(new CustomEvent('mascot:ripple',{detail:{x:b.left+b.width/2,y:b.top+b.height/2}}));}
 window.addEventListener('pointermove',e=>{
  const now=performance.now();
@@ -253,7 +219,7 @@ function explicit(name,now=performance.now(),duration=1400){
 window.addEventListener('pointerdown',e=>{
  if(e.isPrimary===false)return;
  const now=performance.now();
- if(e.pointerType!=='touch'){resume(now);return;}
+ if(e.pointerType!=='touch'){lastInput=e.pointerType||'mouse';resume(now);return;}
  lastInput='touch';edgeMouse=null;endBrowserExit();
  resume(now);
  if(!motion.matches){pointer={x:e.clientX,y:e.clientY};touchUntil=now+1500;}
@@ -274,7 +240,7 @@ button.addEventListener('contextmenu',e=>{if(press||suppressClick)e.preventDefau
 button.addEventListener('click',e=>{
  if(suppressClick&&e.detail!==0){suppressClick=false;return;}
  suppressClick=false;
- const now=performance.now(),touch=e.pointerType==='touch'||(mobile.matches&&e.detail>0);
+ const now=performance.now(),touch=e.pointerType?e.pointerType==='touch':e.detail>0&&lastInput==='touch'&&coarse.matches;
  clicks=now-lastClick<700?clicks+1:1;lastClick=now;
  const double=touch&&now-lastTouchTap<350;
  if(touch)lastTouchTap=double?-Infinity:now;
@@ -322,4 +288,5 @@ function reset(){
 }
 document.addEventListener('visibilitychange',reset);motion.addEventListener('change',reset);mobile.addEventListener('change',reset);
 set(motion.matches?'neutral':'happy',motion.matches?'idle':'reaction',1200);start();
+attachPlacement({button,document,window,onChange(){invalidateBounds();start();}});
 }

@@ -111,3 +111,7 @@ Space Grotesk is self-hosted via the pinned Fontsource variable package (SIL Ope
 ## Continuous integration
 
 The CI workflow installs the locked dependencies with `npm ci`, runs the syntax checks and test suite on Node.js 22, and checks changes on pull requests and pushes to main.
+
+### Motion and mascot placement
+
+The localized context menu and a small accessible footer control pause/resume all automatic animations. Manual preference is stored locally when storage is available; the OS reduced-motion preference always wins. Explicit mascot reactions remain static while paused. Mouse and touch input are distinguished independently of screen width. The fixed mascot chooses a collision-free position, shrinks if necessary, and hides only when no safe area exists (unless it has keyboard focus). No page content is moved.
