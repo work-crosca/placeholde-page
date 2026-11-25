@@ -28,7 +28,7 @@ test('context menu is rendered with localized accessible actions',()=>{
 test('new script is served and the menu is visible only on request',()=>{
   assert.match(server,/\['\/context-menu\.js','text\/javascript'\]/);
   assert.match(css,/\.context-menu\[hidden\],\.context-menu-toast\[hidden\]\{display:none\}/);
-  assert.match(css,/\.context-menu\{position:fixed/);
+  assert.match(css,/\.context-menu\{[^}]*position:fixed/);
   assert.match(css,/@keyframes context-menu-enter/);
 });
 
@@ -53,3 +53,5 @@ test('all animated assets use the same deployment fingerprint',()=>{
  assert.match(server,/createHash\('sha256'\)/);
  assert.match(server,/render\(settings,assetVersion\)/);
 });
+
+test('context menu has spaced items and no visible border',()=>{const rule=css.match(/\.context-menu\{([^}]+)\}/)[1];assert.match(rule,/display:flex/);assert.match(rule,/flex-direction:column/);assert.match(rule,/gap:4px/);assert.match(rule,/border:0/);});
