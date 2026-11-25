@@ -10,7 +10,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test",
-    "build": "node --check server.js && node --check public/mascot.js && node --check src/page.js && node --check public/ascii-background.js"
+    "build": "node --check server.js && node --check public/mascot.js && node --check src/page.js && node --check public/ascii-background.js && node --check public/context-menu.js"
   },
   "dependencies": {
     "react": "19.2.0",
