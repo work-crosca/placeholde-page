@@ -21,7 +21,7 @@ export const server=http.createServer(async(req,res)=>{
  try{
  let path;
  try{
-  if(typeof req.url!=='string'||!req.url.startsWith('/')||req.url.startsWith('//')||req.url.includes('\\\\'))throw new Error('Invalid request target');
+  if(typeof req.url!=='string'||!req.url.startsWith('/')||req.url.startsWith('//')||req.url.includes('\\'))throw new Error('Invalid request target');
   path=new URL(req.url,'http://localhost').pathname;
  }catch{return send(400,'text/plain','Bad request');}
  if(!['GET','HEAD'].includes(req.method))return send(405,'text/plain','Method not allowed',{Allow:'GET, HEAD'});

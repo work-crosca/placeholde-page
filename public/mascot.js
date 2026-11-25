@@ -19,7 +19,7 @@ if(typeof ResizeObserver==='function')new ResizeObserver(invalidateBounds).obser
 // Skip identical SVG writes, including inactive expression layers.
 const attributes=new WeakMap();
 function attr(el,key,value){
- const v=typeof value==='number'?String(Math.round(value*1000)/1000):String(value).replace(/-?\\d+\\.\\d+(?:e[+-]?\\d+)?/gi,n=>String(Math.round(Number(n)*1000)/1000));
+ const v=typeof value==='number'?String(Math.round(value*1000)/1000):(key==='d'||key==='transform')?String(value).replace(/-?(?:\d+\.\d+(?:e[+-]?\d+)?|\d+e[+-]?\d+)/gi,n=>String(Math.round(Number(n)*1000)/1000)):String(value);
  let last=attributes.get(el);if(!last){last=new Map();attributes.set(el,last);}
  if(last.get(key)!==v){last.set(key,v);el.setAttribute(key,v);}
 }

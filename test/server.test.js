@@ -10,6 +10,7 @@ test('HTTP server handles malformed targets and remains available',async(t)=>{
  function request(path,method='GET'){return new Promise((resolve,reject)=>{const req=http.request({hostname:'127.0.0.1',port,path,method},res=>{let body='';res.on('data',chunk=>body+=chunk);res.on('end',()=>resolve({status:res.statusCode,headers:res.headers,body}));});req.on('error',reject);req.end();});}
  assert.equal((await request('//[')).status,400);
  assert.equal((await request('//example.com/health')).status,400);
+ assert.equal((await request('/\\health')).status,400);
  const health=await request('/health?check=1');assert.equal(health.status,200);assert.deepEqual(JSON.parse(health.body),{status:'ok'});
  const head=await request('/health','HEAD');assert.equal(head.status,200);assert.equal(head.body,'');
  const post=await request('/health','POST');assert.equal(post.status,405);assert.equal(post.headers.allow,'GET, HEAD');
