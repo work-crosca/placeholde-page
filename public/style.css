@@ -15,3 +15,13 @@
 /* Navigation and CTA remain interactive even when the page scrolls under the mascot. */
 header,footer,.hero > .contact{z-index:11}
 @media(max-width:360px),(max-height:480px){.mascot{width:clamp(80px,22vw,110px)}}
+
+/* Small desktop context menu matching the dark, blue-accented placeholder UI. */
+.context-menu{position:fixed;top:0;left:0;z-index:50;width:218px;max-width:calc(100vw - 24px);padding:6px;border:1px solid rgba(159,216,255,.28);border-radius:14px;background:#22272e;color:#c7eaff;box-shadow:0 16px 44px rgba(0,0,0,.45),0 2px 10px rgba(0,0,0,.2);animation:context-menu-enter .15s ease-out both}
+.context-menu[hidden],.context-menu-toast[hidden]{display:none}
+.context-menu button{appearance:none;display:flex;align-items:center;gap:12px;width:100%;min-height:42px;padding:9px 12px;border:0;border-radius:9px;background:transparent;color:inherit;font:500 .9rem/1.2 Arial,Helvetica,sans-serif;text-align:left;cursor:pointer}
+.context-menu button:hover,.context-menu button:focus-visible{background:#344559;color:#fff;outline:none}
+.context-menu-icon{display:grid;place-items:center;width:18px;height:18px;flex:none;color:#9fd8ff}
+.context-menu-icon svg{display:block}
+.context-menu-toast{position:fixed;z-index:51;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:max-content;max-width:calc(100vw - 32px);padding:13px 18px;border:1px solid rgba(159,216,255,.28);border-radius:12px;background:#22272e;color:#c7eaff;box-shadow:0 12px 32px rgba(0,0,0,.35);font-size:.9rem;line-height:1.45;text-align:center}
+@keyframes context-menu-enter{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}

@@ -49,6 +49,7 @@ Alternatively: `docker build -t placeholder-page .` then `docker run --rm -p 300
 - server.js: HTTP server, explicit asset allowlist, security headers and status codes.
 - src/page.js: localization, configuration, escaped HTML and original SVG.
 - public/style.css: responsive layout, reduced-motion support, blinking.
+- public/context-menu.js: desktop right-click menu with localized Coming soon/Refresh actions, keyboard navigation and viewport-aware positioning.
 - public/mascot.js: nine-direction gaze, random click and idle expressions, randomized blinking, sleepy state after 30 seconds, visibility-aware timers and reduced-motion support.
 - / returns 200 in coming-soon mode, 503 with Retry-After in maintenance.
 - /health returns 200; unknown paths return 404.
@@ -88,3 +89,7 @@ The header uses the original MIRCO folded blue monogram from `public/images/bran
 ## Web manifest and metadata
 
 `/manifest.webmanifest` is generated at runtime from SITE_NAME, SITE_DESCRIPTION and SITE_LANGUAGE. It uses the exact MIRCO 192px, 512px and maskable 512px icons, a dark theme, root scope and browser display mode. No service worker or offline caching is provided; this is a temporary placeholder, not a full PWA. The page declares theme color, application name, Apple title, author and localized Open Graph locale. Social preview uses SITE_URL when configured and falls back to the shared https://mirco.uk image otherwise. Existing noindex and robots policy is retained. The manifest is served with application/manifest+json and permitted by CSP.
+
+## Custom context menu
+
+On desktop, right-clicking the placeholder opens a compact two-action menu in the site's dark/blue visual style. **Coming soon** shows the current localized page description in a temporary, accessible toast; **Refresh** reloads the page. The menu is clamped to the viewport, dismisses on outside click, scroll, resize, browser blur or Escape, and supports keyboard Context Menu / Shift+F10 and arrow-key navigation. Normal selection, editable fields and touch long-press context menus remain available.
