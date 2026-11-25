@@ -51,3 +51,7 @@ header,footer,.hero > .contact{z-index:11}
 @keyframes typewriter-blink{0%,100%{opacity:1}50%{opacity:0}}
 .is-typewriter-paused .typewriter-cursor{visibility:hidden;animation:none}
 @media(prefers-reduced-motion:reduce){.typewriter-cursor{visibility:hidden}}
+
+/* Keep selected text legible, including the metallic gradient heading. */
+::selection{background-color:#9fd8ff;color:#121315;text-shadow:none}
+.title-text::selection{-webkit-text-fill-color:#121315;color:#121315;background-color:#9fd8ff}
