@@ -67,7 +67,7 @@ Vanilla HTML/CSS/JS plus Node HTTP rather than Next.js/Tailwind: a temporary pag
 
 ## Brand assets and social previews
 
-Favicon SVG/ICO, PNG favicons, Apple touch icon and `public/images/social/mirco.png` are exact copies from `work-crosca/mirco.uk` commit `225d47aa2c7738702473429c40c43804be627ef4`. Open Graph and Twitter use the shared 1200 × 630 image with the placeholder's localized title and description. Set SITE_URL to the public origin for absolute preview URLs. Existing noindex policy is unchanged.
+Favicon SVG/ICO, PNG favicons, Apple touch icon and `public/images/social/mirco.png` are exact copies from `work-crosca/mirco.uk` commit `225d47aa2c7738702473429c40c43804be627ef4`. Open Graph and Twitter use the existing `/apple-touch-icon.png` M icon with the placeholder's localized title and description. Twitter uses a compact summary card; no separate image configuration is required. Set SITE_URL to the public origin for absolute preview URLs. Existing noindex policy is unchanged.
 
 ## Robot mascot
 
@@ -89,7 +89,7 @@ The header uses the original MIRCO folded blue monogram from `public/images/bran
 
 ## Web manifest and metadata
 
-`/manifest.webmanifest` is generated at runtime from SITE_NAME, SITE_DESCRIPTION and SITE_LANGUAGE. It uses the exact MIRCO 192px, 512px and maskable 512px icons, a dark theme, root scope and browser display mode. No service worker or offline caching is provided; this is a temporary placeholder, not a full PWA. The page declares theme color, application name, Apple title, author and localized Open Graph locale. Social preview uses SITE_URL when configured and falls back to the shared https://mirco.uk image otherwise. Existing noindex and robots policy is retained. The manifest is served with application/manifest+json and permitted by CSP.
+`/manifest.webmanifest` is generated at runtime from SITE_NAME, SITE_DESCRIPTION and SITE_LANGUAGE. It uses the exact MIRCO 192px, 512px and maskable 512px icons, a dark theme, root scope and browser display mode. No service worker or offline caching is provided; this is a temporary placeholder, not a full PWA. The page declares theme color, application name, Apple title, author and localized Open Graph locale. Social preview uses SITE_URL when configured and falls back to https://mirco.uk/apple-touch-icon.png otherwise. Existing noindex and robots policy is retained. The manifest is served with application/manifest+json and permitted by CSP.
 
 ## Custom context menu
 

@@ -9,7 +9,7 @@ test('valid contact and fallback',()=>{assert.match(render(config({SITE_EMAIL:'h
 
 test('Telegram only with valid username',()=>{const html=render(config({SITE_TELEGRAM:'mirco_test'}));assert.match(html,/https:\/\/t\.me\/mirco_test/);assert.match(html,/aria-label="Telegram"/);assert.ok(!render(config({SITE_TELEGRAM:'https://evil.test'})).includes('aria-label="Telegram"'));});
 
-test('shared brand metadata',()=>{const html=render(config({SITE_URL:'https://example.mirco.uk'}));assert.ok(html.includes('content="https://example.mirco.uk/images/social/mirco.png"'));assert.ok(html.includes('name="twitter:card"'));assert.ok(html.includes('href="/favicon.ico"'));assert.ok(html.includes('href="/apple-touch-icon.png"'));assert.equal(config({SITE_URL:'javascript:alert(1)'}).origin,'');});
+test('shared brand metadata',()=>{const html=render(config({SITE_URL:'https://example.mirco.uk'}));assert.ok(html.includes('content="https://example.mirco.uk/apple-touch-icon.png"'));assert.ok(html.includes('name="twitter:card"'));assert.ok(html.includes('href="/favicon.ico"'));assert.ok(html.includes('href="/apple-touch-icon.png"'));assert.equal(config({SITE_URL:'javascript:alert(1)'}).origin,'');});
 
 test('head-only interactive mascot',()=>{const html=render(config());assert.match(html,/button type="button" class="mascot"/);assert.match(html,/id="eye-left"/);assert.match(html,/id="eye-right"/);assert.match(html,/id="mouth"/);assert.ok(!render(config({SITE_MASCOT:'false'})).includes('class="mascot"'));});
 
@@ -21,7 +21,7 @@ test('header uses original brand mark',()=>{const html=render(config());assert.m
 
 test('contact uses SVG arrow icon',()=>{const html=render(config({SITE_EMAIL:'hello@example.com'}));assert.match(html,/<a class="contact"[^>]*>[^<]*<svg/);assert.ok(!html.includes('>↗<'));});
 
-test('runtime manifest and metadata',()=>{const c=config({SITE_NAME:'Example',SITE_LANGUAGE:'ro'});const m=manifest(c);assert.equal(m.name,'Example');assert.equal(m.lang,'ro');assert.equal(m.start_url,'/');assert.equal(m.display,'browser');assert.equal(m.icons.length,3);assert.ok(m.icons.some(i=>i.purpose==='maskable'));const html=render(c);assert.match(html,/rel="manifest" href="\/manifest\.webmanifest"/);assert.match(html,/name="theme-color" content="#191717"/);assert.match(html,/property="og:locale" content="ro_RO"/);assert.ok(html.includes('https://mirco.uk/images/social/mirco.png'));});
+test('runtime manifest and metadata',()=>{const c=config({SITE_NAME:'Example',SITE_LANGUAGE:'ro'});const m=manifest(c);assert.equal(m.name,'Example');assert.equal(m.lang,'ro');assert.equal(m.start_url,'/');assert.equal(m.display,'browser');assert.equal(m.icons.length,3);assert.ok(m.icons.some(i=>i.purpose==='maskable'));const html=render(c);assert.match(html,/rel="manifest" href="\/manifest\.webmanifest"/);assert.match(html,/name="theme-color" content="#191717"/);assert.match(html,/property="og:locale" content="ro_RO"/);assert.ok(html.includes('https://mirco.uk/apple-touch-icon.png'));});
 
 test('refined mascot SVG uses clipped reflection and dynamic accents',()=>{const html=render(config());for(const id of ['screen-blue','screen-clip','screen-shine','face-glow-alpha','blush'])assert.ok(html.includes('id="'+id+'"'));assert.match(html,/style\.css\?v=dev/);assert.match(html,/clip-path="url\(#screen-clip\)"/);});
 
@@ -32,3 +32,5 @@ test('five new facial expressions have dedicated SVG layers',()=>{const html=ren
 test('sleeping mascot has three independently animated Z glyphs',()=>{const html=render(config());for(const id of ['sleep-z1','sleep-z2','sleep-z3'])assert.ok(html.includes('id="'+id+'"'));});
 
 test('decorative title and description layers are hidden by default without CSS',()=>{const html=render(config());assert.match(html,/class="typewriter-measure" aria-hidden="true" hidden/);assert.match(html,/class="typewriter-display" aria-hidden="true" hidden/);assert.match(html,/class="title-glitch-layer title-glitch-upper" aria-hidden="true" hidden/);assert.match(html,/class="title-glitch-layer title-glitch-lower" aria-hidden="true" hidden/);});
+
+test('social previews use the square M icon and compact card',()=>{const html=render(config({SITE_URL:'https://example.mirco.uk'}));assert.match(html,/property="og:image" content="https:\/\/example\.mirco\.uk\/apple-touch-icon\.png"/);assert.match(html,/name="twitter:image" content="https:\/\/example\.mirco\.uk\/apple-touch-icon\.png"/);assert.match(html,/name="twitter:card" content="summary"/);assert.doesNotMatch(html,/property="og:image:(width|height)"/);});
