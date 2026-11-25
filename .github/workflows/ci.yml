@@ -20,6 +20,10 @@ jobs:
       - run: npm run lint
       - run: npm test
   browser:
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -31,5 +35,7 @@ jobs:
       - run: npm ci
       # Test-only dependency; never changes the production lockfile or image.
       - run: npm install --no-save --package-lock=false playwright@1.56.1
-      - run: npx --no-install playwright install --with-deps chromium
+      - run: npx --no-install playwright install --with-deps ${{ matrix.browser }}
       - run: npm run test:browser
+        env:
+          BROWSER: ${{ matrix.browser }}

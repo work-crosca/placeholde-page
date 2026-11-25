@@ -123,3 +123,7 @@ The localized context menu and a small accessible footer control pause/resume al
 ### Circular cursor
 
 On fine-pointer devices with hover, the browser uses a centered, hollow blue circle by default and a filled blue circle for links and enabled buttons. Selectable text and disabled controls retain their native cursors; touch devices are unchanged. The SVG assets are self-hosted and do not require JavaScript.
+
+### Accessibility and browser matrix
+
+The motion control reports system-enforced reduced motion instead of offering a misleading resume action. Both menu and footer icons follow the effective state. Cursor SVG URLs are versioned with the asset fingerprint and forced-colors uses native cursors. Mascot placement respects the visual viewport and safe-area insets. Browser CI covers Chromium, Firefox and WebKit with configured email and Telegram links; touch checks run on mobile-capable engines.

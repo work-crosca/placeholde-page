@@ -73,13 +73,20 @@ html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
 .motion-toggle[hidden],.motion-toggle [hidden]{display:none}
 .motion-toggle:hover{color:#b9e7ff}
 .motion-toggle:focus-visible{outline:2px solid #9fd8ff;outline-offset:3px;border-radius:8px}
-.motion-toggle[data-paused="true"] .motion-pause-icon,.motion-toggle:not([data-paused="true"]) .motion-play-icon{display:none}
+[data-motion-toggle][data-paused="true"] .motion-pause-icon,[data-motion-toggle]:not([data-paused="true"]) .motion-play-icon{display:none}
 .motion-toggle+.social{margin-left:0}
 
 /* Native custom cursors: no overlay, animation or pointer-event interception. */
-@media (hover:hover) and (pointer:fine){
- html{cursor:url("/icons/cursor-idle.svg") 12 12,default}
- a[href],button:not(:disabled),[role="button"]:not([aria-disabled="true"]){cursor:url("/icons/cursor-pointer.svg") 12 12,pointer}
+@media (hover:hover) and (pointer:fine) and (forced-colors:none){
+ html{cursor:url("/icons/cursor-idle.svg?v=__ASSET_VERSION__") 12 12,default}
+ a[href],button:not(:disabled),[role="button"]:not([aria-disabled="true"]){cursor:url("/icons/cursor-pointer.svg?v=__ASSET_VERSION__") 12 12,pointer}
  .description,.hero h1,input:not([type="button"]):not([type="submit"]):not([type="reset"]),textarea,[contenteditable="true"]{cursor:text}
  button:disabled,[aria-disabled="true"]{cursor:not-allowed}
 }
+
+[data-motion-toggle][aria-disabled="true"]{cursor:not-allowed;opacity:.7}
+[data-motion-toggle][data-system-reduced="true"] .motion-pause-icon{display:block}
+[data-motion-toggle][data-system-reduced="true"] .motion-play-icon{display:none}
+.context-menu button[data-motion-toggle]{min-width:0;overflow-wrap:anywhere}
+
+:root{--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px);--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
