@@ -1,4 +1,5 @@
 import {motion} from './motion-preference.js';
+import {crtPoint} from './terminal-core.js';
 // Decorative ASCII field: original procedural waves, no external dependencies.
 const canvas=document.querySelector('#ascii-background');
 if(canvas){
@@ -26,10 +27,22 @@ if(canvas){
  function draw(time){
   ctx.clearRect(0,0,width,height);
   const t=time*.00035;
+  const retro=document.documentElement.classList.contains('mirco-retro'),matrix=document.documentElement.classList.contains('mirco-matrix');
   ripples=ripples.filter(r=>time-r.t<1400&&time>=r.t);
   for(let y=stepY/2;y<height;y+=stepY){
    for(let x=stepX/2;x<width;x+=stepX){
     const u=x/Math.max(1,width),v=y/Math.max(1,height);
+    if(matrix){
+     const column=Math.floor(x/stepX),row=Math.floor(y/stepY),rows=Math.max(1,Math.ceil(height/stepY));
+     const head=(Math.floor(time/(95+column%7*24))+column*17)%rows;
+     const age=(head-row+rows)%rows,trail=Math.min(13,rows);
+     if(age>=trail)continue;
+     const p=retro?crtPoint(x,y,width,height):[x,y];
+     const symbols='01ABCDEFGHIJKLMNOPQRSTUVWXYZ<>/+=';
+     ctx.fillStyle='rgba(125,183,255,'+(.12+.78*(1-age/trail)).toFixed(3)+')';
+     ctx.fillText(symbols[(column*13+row*7+Math.floor(time/350))%symbols.length],...p);
+     continue;
+    }
     const wave=Math.sin(u*14+v*7+t)+.65*Math.cos(v*15-u*9-t*.8)+.45*Math.sin((u+v)*22+t*.6);
     const density=Math.max(0,Math.min(1,(wave+.45)/2.55));
     let ripple=0;
@@ -41,7 +54,9 @@ if(canvas){
     const mask=.16+.84*Math.pow(u,1.7);
     const alpha=Math.min(.65,(.045+.17*density)*mask+ripple*.5+proximity*.22);
     ctx.fillStyle='rgba(125,183,255,'+alpha.toFixed(3)+')';
-    ctx.fillText(glyphs[Math.min(glyphs.length-1,Math.floor(Math.max(density,proximity*.7)*glyphs.length))],x+(distance>0&&Number.isFinite(distance)?dx/distance*proximity*8:0),y+(distance>0&&Number.isFinite(distance)?dy/distance*proximity*8:0));
+    const px=x+(distance>0&&Number.isFinite(distance)?dx/distance*proximity*8:0),py=y+(distance>0&&Number.isFinite(distance)?dy/distance*proximity*8:0);
+    const p=retro?crtPoint(px,py,width,height):[px,py];
+    ctx.fillText(glyphs[Math.min(glyphs.length-1,Math.floor(Math.max(density,proximity*.7)*glyphs.length))],...p);
    }
   }
  }
@@ -60,6 +75,7 @@ if(canvas){
   else window.addEventListener('resize',resize,{passive:true});
  motion.addEventListener('change',sync);
  document.addEventListener('visibilitychange',sync);
+ window.addEventListener('mirco:visual-mode',sync);
  resize();sync();
  }
 }

@@ -1,10 +1,16 @@
 import {motion} from './motion-preference.js';
+import {commands,logo,createHistory,complete,formatUptime} from './terminal-core.js';
 const lang=document.documentElement.lang;
 const copy={
  en:{title:'MIRCO terminal',close:'Close',input:'Command',run:'Run',intro:'Type help to explore.',about:'A small digital experience from MIRCO.',unknown:'Unknown command. Try help.',robot:'Hello, human!',secret:'You found a little secret!',offline:'Offline',online:'Online',who:'A curious human.',contact:'Contact not configured.'},
  ro:{title:'Terminal MIRCO',close:'Închide',input:'Comandă',run:'Execută',intro:'Scrie help pentru a explora.',about:'O mică experiență digitală de la MIRCO.',unknown:'Comandă necunoscută. Încearcă help.',robot:'Salut, omule!',secret:'Ai descoperit un mic secret!',offline:'Offline',online:'Online',who:'Un om curios.',contact:'Contactul nu este configurat.'},
  ru:{title:'Терминал MIRCO',close:'Закрыть',input:'Команда',run:'Выполнить',intro:'Введите help для списка команд.',about:'Небольшой цифровой эксперимент MIRCO.',unknown:'Неизвестная команда. Попробуйте help.',robot:'Привет, человек!',secret:'Вы нашли маленький секрет!',offline:'Нет сети',online:'В сети',who:'Любопытный человек.',contact:'Контакт не настроен.'}
 }[lang]||{};
+const terminalCopy={
+ en:{session:'Simulated terminal',system:'OS',shell:'Shell',theme:'Theme',status:'Status',mascot:'Mascot',enabled:'Enabled',disabled:'Disabled',version:'Build',unavailable:'Unavailable',matrixDisabled:'ASCII background is disabled.'},
+ ro:{session:'Terminal simulat',system:'Sistem',shell:'Shell',theme:'Temă',status:'Stare',mascot:'Mascotă',enabled:'Activată',disabled:'Dezactivată',version:'Build',unavailable:'Indisponibil',matrixDisabled:'Fundalul ASCII este dezactivat.'},
+ ru:{session:'Симуляция терминала',system:'ОС',shell:'Оболочка',theme:'Тема',status:'Статус',mascot:'Маскот',enabled:'Включён',disabled:'Выключен',version:'Сборка',unavailable:'Недоступно',matrixDisabled:'ASCII-фон отключён.'}
+}[lang];
 const element=(tag,className,text)=>{const el=document.createElement(tag);if(className)el.className=className;if(text)el.textContent=text;return el;};
 const dialog=element('dialog','mirco-terminal');
 dialog.setAttribute('aria-label',copy.title);
@@ -31,11 +37,29 @@ const output=element('div','terminal-output');
 output.setAttribute('role','log');output.setAttribute('aria-live','polite');output.tabIndex=0;
 const form=element('form','terminal-form'),input=element('input'),run=element('button','terminal-run',copy.run);
 input.setAttribute('aria-label',copy.input);input.placeholder='help';input.autocomplete='off';input.spellcheck=false;input.maxLength=120;run.type='submit';
-form.append(element('span','','$'),input,run);
+const prompt=element('span','terminal-prompt','visitor@mirco:~$');
+prompt.setAttribute('aria-hidden','true');
+const inputWrap=element('div','terminal-input-wrap'),caret=element('span','terminal-caret');
+caret.setAttribute('aria-hidden','true');inputWrap.append(input,caret);
+form.append(prompt,inputWrap,run);
 const content=element('div','terminal-content');content.append(output,form);dialog.append(header,content);document.body.append(dialog);
-let previousFocus=null;
-function line(value){output.append(element('div','',value));while(output.children.length>50)output.firstElementChild.remove();output.scrollTop=output.scrollHeight;}
-function open(){if(dialog.open)return;previousFocus=document.activeElement;dialog.showModal();input.focus();}
+let previousFocus=null,booted=false;
+const history=createHistory();
+function append(node){output.append(node);while(output.children.length>50)output.firstElementChild.remove();output.scrollTop=output.scrollHeight;}
+function line(value,className=''){append(element('div',className,value));}
+function build(){return new URL(import.meta.url).searchParams.get('v')||terminalCopy.unavailable;}
+function fetchInfo(){
+ const banner=element('div','terminal-fetch');
+ const art=element('pre','terminal-logo',logo);art.setAttribute('aria-label','MIRCO');
+ const info=element('div','terminal-info');
+ info.append(element('strong','terminal-host','visitor@mirco'),element('div','terminal-session',terminalCopy.session));
+ const fields=[[terminalCopy.system,'MIRCO OS'],[terminalCopy.shell,'mirco-shell'],[terminalCopy.theme,'Midnight Blue'],[terminalCopy.status,document.querySelector('.status')?.textContent.trim()||terminalCopy.unavailable],[terminalCopy.mascot,document.querySelector('.mascot')?terminalCopy.enabled:terminalCopy.disabled]];
+ for(const [label,value] of fields){const row=element('div','terminal-info-row');row.append(element('span','terminal-info-label',label+': '),element('span','',value));info.append(row);}
+ const palette=element('div','terminal-palette');palette.setAttribute('aria-hidden','true');for(let i=0;i<7;i++)palette.append(element('span'));
+ info.append(palette);banner.append(art,info);append(banner);
+}
+function boot(){output.replaceChildren();fetchInfo();line(copy.intro,'terminal-hint');output.scrollTop=0;booted=true;}
+function open(){if(dialog.open)return;previousFocus=document.activeElement;dialog.showModal();if(!booted)boot();input.focus();}
 close.addEventListener('click',()=>dialog.close());
 minimize.addEventListener('click',()=>dialog.close());
 maximize.addEventListener('click',()=>{
@@ -48,20 +72,43 @@ maximize.addEventListener('click',()=>{
 dialog.addEventListener('close',()=>{if(previousFocus instanceof HTMLElement&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});});
 const celebrate=()=>window.dispatchEvent(new Event('mirco:celebrate'));
 function secret(){open();line(copy.secret);celebrate();}
-line(copy.intro);
+input.addEventListener('keydown',e=>{
+ if(e.isComposing)return;
+ if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+  e.preventDefault();input.value=history.move(e.key==='ArrowUp'?-1:1,input.value);input.setSelectionRange(input.value.length,input.value.length);
+ }else if(e.key==='Tab'&&!e.shiftKey&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+  const result=complete(input.value);
+  if(result.matches.length&&result.value!==input.value){e.preventDefault();input.value=result.value;input.setSelectionRange(input.value.length,input.value.length);}
+  else if(result.matches.length>1&&result.value===input.value){e.preventDefault();line(result.matches.join('  '));}
+ }
+});
+dialog.addEventListener('keydown',e=>{
+ if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='l'){e.preventDefault();output.replaceChildren();input.focus();}
+});
+function toggleMode(name){
+ const enabled=document.documentElement.classList.toggle(name);
+ window.dispatchEvent(new Event('mirco:visual-mode'));
+ return enabled;
+}
 form.addEventListener('submit',e=>{
  e.preventDefault();const raw=input.value.trim();input.value='';if(!raw)return;
- const command=raw.toLowerCase();
+ const command=raw.toLowerCase();history.add(raw);
  if(command==='clear'){output.replaceChildren();return;}
- line('$ '+raw);
+ if(command==='reboot'){history.reset();boot();return;}
+ line('visitor@mirco:~$ '+raw,'terminal-command');
  switch(command){
- case 'help':line('help · about · status · robot · contact · whoami · clear · retro · exit');break;
+ case 'help':line(commands.join(' · '));break;
+ case 'neofetch':case 'fastfetch':fetchInfo();break;
+ case 'date':line(new Date().toLocaleString(lang));break;
+ case 'uptime':line(formatUptime(performance.now()));break;
+ case 'version':line(terminalCopy.version+': '+build());break;
+ case 'matrix':if(document.querySelector('#ascii-background'))line('Matrix: '+(toggleMode('mirco-matrix')?'ON':'OFF'));else line(terminalCopy.matrixDisabled);break;
  case 'about':line(copy.about);break;
  case 'status':line((document.querySelector('.status')?.textContent.trim()||'')+' · '+(navigator.onLine?copy.online:copy.offline));break;
  case 'robot':line(copy.robot);celebrate();break;
  case 'contact':line(document.querySelector('.contact')?.getAttribute('href')?.replace(/^mailto:/,'')||copy.contact);break;
  case 'whoami':line(copy.who);break;
- case 'retro':document.documentElement.classList.toggle('mirco-retro');line('CRT: '+(document.documentElement.classList.contains('mirco-retro')?'ON':'OFF'));break;
+ case 'retro':line('CRT: '+(toggleMode('mirco-retro')?'ON':'OFF'));break;
  case 'exit':dialog.close();break;
  default:line(copy.unknown);
  }
@@ -74,7 +121,7 @@ window.addEventListener('keydown',e=>{
  if(dialog.open||e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.target.closest?.('input,textarea,select,[contenteditable]'))return;
  const now=performance.now();if(now-lastKey>1500)keys=[];lastKey=now;
  keys.push(e.key.length===1?e.key.toLowerCase():e.key);keys=keys.slice(-10);
- if(keys.join(',')===konami.join(',')){keys=[];document.documentElement.classList.toggle('mirco-retro');secret();}
+ if(keys.join(',')===konami.join(',')){keys=[];toggleMode('mirco-retro');secret();}
  else if(keys.slice(-5).join('')==='mirco'){keys=[];secret();}
 });
 let logoCount=0,logoAt=0;
