@@ -44,11 +44,13 @@ export function config(env={}){
  const lang=Object.hasOwn(copy,env.SITE_LANGUAGE)?env.SITE_LANGUAGE:'en';
  const mode=env.SITE_MODE==='maintenance'?'maintenance':'soon';
  const t=copy[lang], maintenance=mode==='maintenance';
+ const customDescription=String(env.SITE_DESCRIPTION||'').trim();
+ const phrases=maintenance||env.SITE_TYPEWRITER==='false'?[]:[...new Set([...(customDescription?[customDescription]:[]),...descriptionPhrases[lang]])];
  const email=/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(env.SITE_EMAIL||'')?env.SITE_EMAIL:'';
  const telegram=/^[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(env.SITE_TELEGRAM||'')?env.SITE_TELEGRAM:'';
  let origin='';
  try {const u=new URL(env.SITE_URL||'');if(['http:','https:'].includes(u.protocol)&&!u.username&&!u.password)origin=u.origin;}catch{}
- return {ascii:env.SITE_ASCII_BACKGROUND!=='false',origin,telegram,lang,mode,name:env.SITE_NAME||'MIRCO',title:env.SITE_TITLE||(maintenance?t.maintenance:t.soon),description:env.SITE_DESCRIPTION||(maintenance?t.maintenanceDescription:t.description),phrases:!maintenance&&!env.SITE_DESCRIPTION?descriptionPhrases[lang]:[],status:maintenance?t.maintenanceStatus:t.status,email,contact:t.contact,mascot:env.SITE_MASCOT!=='false'};
+ return {ascii:env.SITE_ASCII_BACKGROUND!=='false',origin,telegram,lang,mode,name:env.SITE_NAME||'MIRCO',title:env.SITE_TITLE||(maintenance?t.maintenance:t.soon),description:customDescription||(maintenance?t.maintenanceDescription:t.description),phrases,status:maintenance?t.maintenanceStatus:t.status,email,contact:t.contact,mascot:env.SITE_MASCOT!=='false'};
 }
 export function manifest(c){
  return {id:'/',name:c.name,short_name:c.name,description:c.description,lang:c.lang,start_url:'/',scope:'/',display:'browser',background_color:'#191717',theme_color:'#191717',icons:[
