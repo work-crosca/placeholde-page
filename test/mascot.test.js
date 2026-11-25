@@ -19,7 +19,7 @@ function exercise(run,assert){
   const contact=node(),social=node();
   const doc=Object.assign(listeners(),{hidden:false,documentElement:root,querySelector:k=>k==='.mascot'?button:k==='.contact'?contact:k==='.social'?social:null});
   const queue=new Map(),timers=new Map();
-  run({Math:Object.assign(Object.create(Math),{random:()=>randomValue}),document:doc,window:win,matchMedia:q=>Object.assign(listeners(),{get matches(){return q.includes('reduced-motion')?reduced:q.includes('max-width')&&narrow;}}),performance:{now:()=>now},requestAnimationFrame:f=>{queue.set(++raf,f);return raf;},cancelAnimationFrame:id=>queue.delete(id),setTimeout:(f,ms)=>{timers.set(++raf,{f,at:now+ms});return raf;},clearTimeout:id=>timers.delete(id),navigator:{},CustomEvent:class{}});
+  run({Math:Object.assign(Object.create(Math),{random:()=>randomValue}),document:doc,window:win,matchMedia:q=>Object.defineProperty(listeners(),'matches',{get(){return q.includes('reduced-motion')?reduced:q.includes('max-width')&&narrow;}}),performance:{now:()=>now},requestAnimationFrame:f=>{queue.set(++raf,f);return raf;},cancelAnimationFrame:id=>queue.delete(id),setTimeout:(f,ms)=>{timers.set(++raf,{f,at:now+ms});return raf;},clearTimeout:id=>timers.delete(id),navigator:{},CustomEvent:class{}});
   function frame(ms=16){now+=ms;for(const [id,timer] of [...timers])if(timer.at<=now&&timers.delete(id))timer.f();const pending=[...queue.values()];queue.clear();for(const f of pending)f(now);}
   const exit=(y,type='mouse',relatedTarget=null)=>root.emit('pointerleave',{pointerType:type,clientX:180,clientY:y,relatedTarget});
   exit(0,'touch');assert.notEqual(button.dataset.emotion,'angry');

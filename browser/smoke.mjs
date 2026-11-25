@@ -50,7 +50,8 @@ try{
  await touch.waitForFunction(()=>['placed','hidden'].includes(document.querySelector('.mascot').dataset.placement));
  const mascot=touch.locator('.mascot');
  if(await mascot.isVisible()){
-  await mascot.tap();await mascot.tap();
+  const b=await mascot.boundingBox();
+  await touch.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);await touch.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);
   assert.equal(await mascot.getAttribute('data-emotion'),'love');
  }
  await touch.close();
