@@ -93,3 +93,7 @@ The header uses the original MIRCO folded blue monogram from `public/images/bran
 ## Custom context menu
 
 On desktop, right-clicking the placeholder opens a compact two-action menu in the site's dark/blue visual style. **Coming soon** shows the current localized page description in a temporary, accessible toast; **Refresh** reloads the page. The menu is clamped to the viewport, dismisses on outside click, scroll, resize, browser blur or Escape, and supports keyboard Context Menu / Shift+F10 and arrow-key navigation. Normal selection, editable fields and touch long-press context menus remain available.
+
+## Animated heading and description
+
+The heading uses a 320 ms subtle digital glitch every 6.5–14 seconds. Default coming-soon descriptions rotate through eight localized phrases (EN/RO/RU), holding a complete phrase for 5–11 seconds before erasing and typing the next in shuffled order without immediate repetition. The longest rendered phrase reserves space at the current viewport width. Custom SITE_DESCRIPTION and maintenance descriptions remain static. Both effects stop when the document is hidden or reduced motion is requested. Metadata and accessible description remain stable.
