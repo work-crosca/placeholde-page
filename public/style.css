@@ -97,3 +97,14 @@ html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
  .description,.hero h1,input,textarea,[contenteditable="true"]{cursor:text}
  button:disabled,[aria-disabled="true"]{cursor:not-allowed}
 }
+
+
+/* Hidden experience: static, native modal; existing page layout is untouched. */
+.mirco-terminal{box-sizing:border-box;width:min(560px,calc(100% - 32px));max-height:calc(100% - 32px);padding:20px;border:1px solid #36516b;border-radius:16px;color:#c4dfff;background:#111925;font:inherit;overflow:auto}
+.mirco-terminal::backdrop{background:rgba(8,12,18,.72)}
+.terminal-header,.terminal-form{display:flex;align-items:center;gap:12px}
+.terminal-header{justify-content:space-between}
+.terminal-close,.terminal-run{color:inherit;background:#25384d;border:0;border-radius:8px;padding:8px 12px;font:inherit}
+.terminal-output{font:13px/1.65 monospace;height:min(240px,35vh);overflow:auto;overflow-wrap:anywhere;user-select:text;margin:16px 0}
+.terminal-form input{font:inherit;color:inherit;flex:1;min-width:0;background:#0c1420;border:1px solid #36516b;border-radius:8px;padding:8px;user-select:text}
+.mirco-retro .shell::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:10;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(120,180,255,.075) 3px 4px)}

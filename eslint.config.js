@@ -1,4 +1,4 @@
-const browserGlobals=Object.fromEntries(['document','window','matchMedia','navigator','ResizeObserver','CustomEvent','performance','requestAnimationFrame','cancelAnimationFrame','setTimeout','clearTimeout','Element','URL','console'].map(name=>[name,'readonly']));
+const browserGlobals=Object.fromEntries(['document','window','matchMedia','navigator','ResizeObserver','CustomEvent','performance','requestAnimationFrame','cancelAnimationFrame','setTimeout','clearTimeout','Element','HTMLElement','Event','MutationObserver','URL','console'].map(name=>[name,'readonly']));
 const nodeGlobals=Object.fromEntries(['process','console','URL','Buffer','setTimeout','clearTimeout','fetch','performance','global','__dirname'].map(name=>[name,'readonly']));
 export default [
  {ignores:['node_modules/**','public/**/*.css']},

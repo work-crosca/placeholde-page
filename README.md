@@ -127,3 +127,8 @@ On fine-pointer devices with hover, the browser uses a centered, hollow blue cir
 ### Accessibility and browser matrix
 
 The motion control reports system-enforced reduced motion instead of offering a misleading resume action. Both menu and footer icons follow the effective state. Cursor SVG URLs are versioned with the asset fingerprint and forced-colors uses native cursors. Mascot placement respects the visual viewport and safe-area insets. Browser CI covers Chromium, Firefox and WebKit with configured email and Telegram links; touch checks run on mobile-capable engines.
+
+
+### Hidden interactive experience
+
+Open the localized terminal through the desktop context menu or Ctrl/Cmd+Shift+K. Commands are local, fixed and non-executable; no shell or network access is exposed. The mascot now has a decaying session-local mood bias, reacts to connection changes and return to the tab, and changes the browser favicon for sustained expressions. The original brand favicon returns for neutral expressions and paused motion. ASCII pointer proximity and click ripples obey the shared motion preference. Hidden interactions include typing mirco, the Konami code (static CRT scanlines), five quick logo clicks and ten quick mascot clicks. No new runtime dependencies or environment settings are needed.

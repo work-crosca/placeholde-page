@@ -61,6 +61,25 @@ try{
   }
   assert.equal(await page.locator('.contact').getAttribute('href'),'mailto:contact@example.com');
   assert.equal(await page.locator('.social').getAttribute('href'),'https://t.me/mirco_test');
+  if(viewport.width===1440){
+   await page.keyboard.press('Control+Shift+K');
+   const terminal=page.locator('.mirco-terminal');
+   await terminal.waitFor({state:'visible'});
+   await terminal.locator('input').fill('help');
+   await terminal.locator('input').press('Enter');
+   assert.match(await terminal.locator('.terminal-output').innerText(),/whoami/);
+   await terminal.locator('input').fill('retro');
+   await terminal.locator('input').press('Enter');
+   assert.equal(await page.locator('html').evaluate(el=>el.classList.contains('mirco-retro')),true);
+   await page.keyboard.press('Escape');
+   await terminal.waitFor({state:'hidden'});
+   await page.keyboard.press('Control+Shift+K');
+   await terminal.locator('input').fill('retro');
+   await terminal.locator('input').press('Enter');
+   await page.keyboard.press('Escape');
+   await terminal.waitFor({state:'hidden'});
+   for(const name of ['happy','love','angry','sleep'])assert.equal((await page.request.get(origin+'/icons/mood-'+name+'.svg')).status(),200);
+  }
   const control=page.locator('.motion-toggle');
   await control.click();
   assert.equal(await page.locator('html').getAttribute('data-motion-paused'),'true');

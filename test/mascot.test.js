@@ -5,7 +5,8 @@ import {runInNewContext} from 'node:vm';
 // Run the real controller in a deterministic DOM/timer harness; modules are tested separately.
 const expressions=readFileSync(new URL('../public/mascot/expressions.js',import.meta.url),'utf8').replaceAll('export const ','const ');
 const renderer=readFileSync(new URL('../public/mascot/renderer.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replaceAll('export function ','function ');
-const source=expressions+'\n'+renderer+"\nconst motion=matchMedia('(prefers-reduced-motion: reduce)');\nconst attachPlacement=()=>{};\n"+readFileSync(new URL('../public/mascot.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
+const moodSource=readFileSync(new URL('../public/mascot/mood.js',import.meta.url),'utf8').replace('export function ','function ');
+const source=expressions+'\n'+moodSource+'\n'+renderer+"\nconst motion=matchMedia('(prefers-reduced-motion: reduce)');\nconst attachPlacement=()=>{};\n"+readFileSync(new URL('../public/mascot.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace('const mood=createMood(activity);','const mood=createMood(activity);captureMood(mood.value);');
 
 function exercise(run,assert){
  function scenario(reduced=false){
@@ -20,7 +21,8 @@ function exercise(run,assert){
   const contact=node(),social=node();
   const doc=Object.assign(listeners(),{hidden:false,documentElement:root,querySelector:k=>k==='.mascot'?button:k==='.contact'?contact:k==='.social'?social:null});
   const queue=new Map(),timers=new Map();
-  run({Math:Object.assign(Object.create(Math),{random:()=>randomValue}),document:doc,window:win,matchMedia:q=>Object.defineProperty(listeners(),'matches',{get(){return q.includes('reduced-motion')?reduced:q.includes('max-width')&&narrow;}}),performance:{now:()=>now},requestAnimationFrame:f=>{queue.set(++raf,f);return raf;},cancelAnimationFrame:id=>queue.delete(id),setTimeout:(f,ms)=>{timers.set(++raf,{f,at:now+ms});return raf;},clearTimeout:id=>timers.delete(id),navigator:{},CustomEvent:class{}});
+  let moodValue=()=>0;
+  run({captureMood:fn=>{moodValue=fn;},Math:Object.assign(Object.create(Math),{random:()=>randomValue}),document:doc,window:win,matchMedia:q=>Object.defineProperty(listeners(),'matches',{get(){return q.includes('reduced-motion')?reduced:q.includes('max-width')&&narrow;}}),performance:{now:()=>now},requestAnimationFrame:f=>{queue.set(++raf,f);return raf;},cancelAnimationFrame:id=>queue.delete(id),setTimeout:(f,ms)=>{timers.set(++raf,{f,at:now+ms});return raf;},clearTimeout:id=>timers.delete(id),navigator:{},CustomEvent:class{}});
   function frame(ms=16){now+=ms;for(const [id,timer] of [...timers])if(timer.at<=now&&timers.delete(id))timer.f();const pending=[...queue.values()];queue.clear();for(const f of pending)f(now);}
   const exit=(y,type='mouse',relatedTarget=null)=>root.emit('pointerleave',{pointerType:type,clientX:180,clientY:y,relatedTarget});
   exit(0,'touch');assert.notEqual(button.dataset.emotion,'angry');
@@ -65,7 +67,11 @@ function exercise(run,assert){
   const newPoses={laughing:null,scared:'#scared-eyes',crying:'#tears',dizzy:'#spiral-eyes',proud:null};
   for(const [name,layer] of Object.entries(newPoses)){
    doc.emit('visibilitychange');frame(800);
-   const candidates=pool.filter(n=>n!==lastChosen);randomValue=(candidates.indexOf(name)+.5)/candidates.length;
+   const candidates=pool.filter(n=>n!==lastChosen);const positive=new Set(['happy','love','excited','proud','laughing','wink']);
+   const negative=new Set(['angry','confused','sad','scared','dizzy','crying']);
+   const weights=candidates.map(n=>Math.max(.15,1+(positive.has(n)?moodValue(now):negative.has(n)?-moodValue(now):0)*.27));
+   const index=candidates.indexOf(name);
+   randomValue=(weights.slice(0,index).reduce((a,b)=>a+b,0)+weights[index]/2)/weights.reduce((a,b)=>a+b,0);
    button.emit('click',{pointerType:'mouse',detail:1});lastChosen=name;
    assert.equal(button.dataset.emotion,name);
    for(let i=0;i<25;i++)frame(16);

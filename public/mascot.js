@@ -1,6 +1,7 @@
 import {motion} from './motion-preference.js';
 import {names,idleNames,baseColor,rgb,DROWSY_IDLE,YAWN_IDLE,ASLEEP_IDLE,WAKE_OPEN,WAKE_SMILE,vector} from './mascot/expressions.js';
 import {attachPlacement} from './mascot/placement.js';
+import {createMood} from './mascot/mood.js';
 import {createAttributeWriter,renderPose} from './mascot/renderer.js';
 // Original parametric SVG animation. One state controller owns all expressions.
 const button=document.querySelector('.mascot');
@@ -24,12 +25,13 @@ if(typeof ResizeObserver==='function')new ResizeObserver(invalidateBounds).obser
 const attr=createAttributeWriter();
 let faceRgb=rgb(baseColor),poseAt=0;
 let current=vector('neutral'),target=current.slice(),state='idle',emotion='neutral',lastEmotion='',until=0,frame=0,previous=0,activity=performance.now(),idleAt=activity+random(4000,8000),blinkAt=activity+random(3000,6000),secondBlink=0,hover=null,pointer=null,gx=0,gy=0,hx=0,hy=0,tilt=0,pulse=0,clicks=0,lastClick=-Infinity,lastPointer=null,lastFast=-Infinity,near=false;
+const mood=createMood(activity);
 function set(name,next='reaction',duration=1400,now=performance.now()){
  clearTimeout(reducedTimer);reducedTimer=undefined;
  emotion=name;state=next;poseAt=now;until=now+duration;target=vector(name);button.dataset.emotion=name;button.dataset.state=next;
  if(motion.matches){current=target.slice();paint(now,0);}
 }
-function choose(pool=names){const a=pool.filter(n=>n!==lastEmotion);return lastEmotion=a[Math.floor(Math.random()*a.length)];}
+function choose(pool=names){return lastEmotion=mood.choose(pool,lastEmotion,performance.now());}
 function paint(now,dt){
  ({current,faceRgb,gx,gy,hx,hy,tilt,pulse}=renderPose({state,emotion,poseAt,target,motion,activity,browserExit,pointer,hover,bounds,attr,left,right,hearts,tears,spirals,scaredEyes,wavyMouth,mouth,face,blush,glow,eyes,spiralLeft,spiralRight,shine,head,sleep,sleepGlyphs,current,faceRgb,gx,gy,hx,hy,tilt,pulse},now,dt));
 }
@@ -77,7 +79,7 @@ window.addEventListener('pointermove',e=>{
  resume(now);touchUntil=0;pointer={x:e.clientX,y:e.clientY};
  const b=bounds(),close=Math.hypot(e.clientX-b.left-b.width/2,e.clientY-b.top-b.height/2)<b.width*.65;
  if(!hover&&['idle','tracking'].includes(state)){
-  if(lastPointer&&now-lastPointer.t>0&&now-lastPointer.t<100&&Math.hypot(e.clientX-lastPointer.x,e.clientY-lastPointer.y)/(now-lastPointer.t)>2.5&&now-lastFast>3500){lastFast=now;set('surprised','reaction',850,now);}
+  if(lastPointer&&now-lastPointer.t>0&&now-lastPointer.t<100&&Math.hypot(e.clientX-lastPointer.x,e.clientY-lastPointer.y)/(now-lastPointer.t)>2.5&&now-lastFast>3500){lastFast=now;set('dizzy','reaction',1000,now);}
   else if(close&&!near)set('curious','reaction',900,now);
  }
  near=close;lastPointer={...pointer,t:now};
@@ -137,7 +139,7 @@ root.addEventListener('mouseenter',returnFromBrowser);
 window.addEventListener('blur',()=>{clearPointer();if(!browserExit)edgeMouse=null;});
 function feedback(ms=18){try{if(typeof navigator.vibrate==='function')navigator.vibrate(ms);}catch{}}
 function explicit(name,now=performance.now(),duration=1400){
- clearEdge();hover=null;resume(now);set(name,'reaction',duration,now);
+ clearEdge();hover=null;resume(now);mood.react(name,now);set(name,'reaction',duration,now);
  if(motion.matches)reducedTimer=setTimeout(()=>{if(state==='reaction'&&emotion===name){const at=performance.now();if(!restoreContext(at))normal(at);}},duration);
 }
 window.addEventListener('pointerdown',e=>{
@@ -152,7 +154,7 @@ button.addEventListener('pointerdown',e=>{
  if(e.pointerType!=='touch'||!e.isPrimary)return;
  suppressClick=false;clearTimeout(pressTimer);
  press={id:e.pointerId,x:e.clientX,y:e.clientY};
- pressTimer=setTimeout(()=>{if(!press)return;suppressClick=true;explicit('confused');pulse=1;feedback(25);ripple();},550);
+ pressTimer=setTimeout(()=>{if(!press)return;suppressClick=true;explicit('happy');pulse=1;feedback(25);ripple();},550);
 },{passive:true});
 window.addEventListener('pointermove',e=>{
  if(press&&e.pointerId===press.id&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>12){clearTimeout(pressTimer);press=null;}
@@ -229,7 +231,21 @@ function reset(){
  if(document.hidden||!restoreContext(now))normal(now);
  start();
 }
-document.addEventListener('visibilitychange',reset);motion.addEventListener('change',reset);mobile.addEventListener('change',reset);
+let hiddenAt=0;
+document.addEventListener('visibilitychange',()=>{
+ const now=performance.now();
+ if(document.hidden){hiddenAt=now;reset();return;}
+ const wasAway=hiddenAt&&now-hiddenAt>=1000;hiddenAt=0;reset();
+ if(wasAway&&!motion.matches&&!hover)set('happy','reaction',1400,now);
+});
+function ambient(name){
+ if(document.hidden||motion.matches||browserExit||hover||button.dataset.placement==='hidden')return;
+ const now=performance.now();resume(now);mood.react(name,now);set(name,'reaction',1600,now);
+}
+window.addEventListener('offline',()=>ambient('confused'));
+window.addEventListener('online',()=>ambient('excited'));
+window.addEventListener('mirco:celebrate',()=>explicit('love',performance.now(),2200));
+motion.addEventListener('change',reset);mobile.addEventListener('change',reset);
 set(motion.matches?'neutral':'happy',motion.matches?'idle':'reaction',1200);start();
 attachPlacement({button,document,window,onChange(){invalidateBounds();start();}});
 }

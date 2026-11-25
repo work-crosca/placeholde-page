@@ -40,7 +40,7 @@ if (menu && toast) {
   }
 
   document.addEventListener('contextmenu', (event) => {
-    if (event.defaultPrevented || editable(event.target) || nativeMenu(event.target) || !styled()) return;
+    if (event.defaultPrevented || document.querySelector('dialog[open]') || editable(event.target) || nativeMenu(event.target) || !styled()) return;
     // Preserve the long-press and text-selection menus on touch devices.
     if (event.pointerType === 'touch' ||
         (window.matchMedia('(hover: none) and (pointer: coarse)').matches && event.button !== 2)) return;
@@ -50,7 +50,7 @@ if (menu && toast) {
   });
 
   document.addEventListener('keydown', (event) => {
-    if ((event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) && !editable(event.target) && !nativeMenu(event.target) && !window.getSelection()?.toString().trim() && styled()) {
+    if (!document.querySelector('dialog[open]') && (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) && !editable(event.target) && !nativeMenu(event.target) && !window.getSelection()?.toString().trim() && styled()) {
       event.preventDefault();
       const focused = document.activeElement;
       const bounds = focused && focused !== document.body ? focused.getBoundingClientRect() : null;
@@ -77,7 +77,9 @@ if (menu && toast) {
     const action = event.target.closest('button[data-action]')?.dataset.action;
     if (!action || event.target.closest('button[data-action]')?.getAttribute('aria-disabled')==='true') return;
     close(true);
-    if (action === 'motion') {
+    if (action === 'terminal') {
+      window.dispatchEvent(new Event('mirco:terminal'));
+    } else if (action === 'motion') {
       motion.toggle();
     } else if (action === 'refresh') {
       window.location.reload();
