@@ -1,10 +1,13 @@
 export const commands=['help','about','status','robot','contact','whoami','neofetch','fastfetch','date','uptime','version','reboot','clear','retro','matrix','exit'];
+// Seven equally sized rows; fixed five-column letters with two-column spacing.
 export const logo=[
- '█   █  ███  ████   ████  ███',
- '██ ██   █   █   █  █     █ █',
- '█ █ █   █   ████   █     █ █',
- '█   █   █   █  █   █     █ █',
- '█   █  ███  █   █  ████  ███'
+ "█   █  █████  ████    ████   ███ ",
+ "██ ██    █    █   █  █      █   █",
+ "█ █ █    █    █   █  █      █   █",
+ "█   █    █    ████   █      █   █",
+ "█   █    █    █ █    █      █   █",
+ "█   █    █    █  █   █      █   █",
+ "█   █  █████  █   █   ████   ███ "
 ].join('\n');
 export function createHistory(limit=50){
  let entries=[],index=0,draft='';

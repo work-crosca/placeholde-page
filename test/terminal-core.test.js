@@ -10,7 +10,8 @@ test('completion is deterministic and restricted to known commands',()=>{
  assert.deepEqual(complete('neo'),{value:'neofetch',matches:['neofetch']});
  assert.equal(complete('re').value,'re');assert.deepEqual(complete('re').matches,['reboot','retro']);
  assert.deepEqual(complete('rm -rf'),{value:'rm -rf',matches:[]});assert.equal(commands.includes('matrix'),true);
- assert.equal(logo.split('\n').length,5);assert.equal(formatUptime(3661000),'01:01:01');
+ const rows=logo.split('\n');assert.equal(rows.length,7);assert.ok(rows.every(row=>row.length===33));
+ assert.ok(rows.every(row=>[5,6,12,13,19,20,26,27].every(i=>row[i]===' ')));assert.equal(formatUptime(3661000),'01:01:01');
 });
 test('CRT curvature keeps center fixed and moves corners inward symmetrically',()=>{
  assert.deepEqual(crtPoint(500,250,1000,500),[500,250]);

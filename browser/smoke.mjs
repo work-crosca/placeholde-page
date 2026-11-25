@@ -67,6 +67,8 @@ try{
    await terminal.waitFor({state:'visible'});
    assert.equal(await terminal.locator('.terminal-window-controls button').count(),3);
    assert.equal(await terminal.locator('.terminal-logo').count(),1);
+   assert.equal(await terminal.locator('.terminal-logo').getAttribute('aria-label'),'MIRCO');
+   assert.ok((await terminal.locator('.terminal-logo').textContent()).split('\n').every(row=>row.length===33));
    assert.match(await terminal.locator('.terminal-info').innerText(),/MIRCO OS/);
    assert.ok(await terminal.locator('.terminal-logo').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
    const command=terminal.locator('input');

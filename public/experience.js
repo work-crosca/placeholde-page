@@ -50,7 +50,7 @@ function line(value,className=''){append(element('div',className,value));}
 function build(){return new URL(import.meta.url).searchParams.get('v')||terminalCopy.unavailable;}
 function fetchInfo(){
  const banner=element('div','terminal-fetch');
- const art=element('pre','terminal-logo',logo);art.setAttribute('aria-label','MIRCO');
+ const art=element('pre','terminal-logo',logo);art.setAttribute('aria-label','MIRCO');art.setAttribute('role','img');
  const info=element('div','terminal-info');
  info.append(element('strong','terminal-host','visitor@mirco'),element('div','terminal-session',terminalCopy.session));
  const fields=[[terminalCopy.system,'MIRCO OS'],[terminalCopy.shell,'mirco-shell'],[terminalCopy.theme,'Midnight Blue'],[terminalCopy.status,document.querySelector('.status')?.textContent.trim()||terminalCopy.unavailable],[terminalCopy.mascot,document.querySelector('.mascot')?terminalCopy.enabled:terminalCopy.disabled]];
