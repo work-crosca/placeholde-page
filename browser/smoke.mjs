@@ -66,11 +66,21 @@ try{
    const terminal=page.locator('.mirco-terminal');
    await terminal.waitFor({state:'visible'});
    assert.equal(await terminal.locator('.terminal-window-controls button').count(),3);
+   const dots=await terminal.locator('.terminal-window-dot').evaluateAll(nodes=>nodes.map(n=>{const b=n.getBoundingClientRect();return {left:b.left,right:b.right};}));
+   assert.ok(dots[1].left-dots[0].right<=8&&dots[2].left-dots[1].right<=8);
    assert.equal(await terminal.locator('.terminal-logo').count(),1);
    assert.equal(await terminal.locator('.terminal-logo').getAttribute('aria-label'),'MIRCO');
    assert.ok((await terminal.locator('.terminal-logo').textContent()).split('\n').every(row=>row.length===33));
    assert.match(await terminal.locator('.terminal-info').innerText(),/MIRCO OS/);
-   assert.ok(await terminal.locator('.terminal-logo').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+   const bannerGeometry=await terminal.locator('.terminal-fetch').evaluate(el=>{
+    const logo=el.querySelector('.terminal-logo'),svg=logo.querySelector('svg'),info=el.querySelector('.terminal-info'),out=el.closest('.terminal-output');
+    const a=logo.getBoundingClientRect(),b=info.getBoundingClientRect(),c=svg.getBoundingClientRect();
+    return {stacked:b.top>=a.bottom,width:a.width,height:a.height,svgWidth:c.width,svgHeight:c.height,overflow:logo.scrollWidth>logo.clientWidth+1||logo.scrollHeight>logo.clientHeight+1,bootOverflow:out.scrollHeight>out.clientHeight+1};
+   });
+   assert.ok(bannerGeometry.stacked&&bannerGeometry.width>0&&bannerGeometry.height>0);
+   assert.ok(Math.abs(bannerGeometry.width-bannerGeometry.svgWidth)<1&&Math.abs(bannerGeometry.height-bannerGeometry.svgHeight)<1);
+   assert.equal(bannerGeometry.overflow,false);
+   assert.equal(bannerGeometry.bootOverflow,false,'fresh boot should fit at '+JSON.stringify(viewport));
    const command=terminal.locator('input');
    await command.fill('neo');await command.press('Tab');assert.equal(await command.inputValue(),'neofetch');
    await command.press('Enter');assert.equal(await terminal.locator('.terminal-logo').count(),2);
@@ -105,8 +115,26 @@ try{
    await terminal.locator('input').fill('retro');
    await terminal.locator('input').press('Enter');
    assert.equal(await page.locator('html').evaluate(el=>el.classList.contains('mirco-retro')),true);
+   assert.match(await page.locator('.hero h1').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-warp/);
+   assert.equal(await page.locator('.contact').evaluate(el=>getComputedStyle(el).filter),'none');
+   assert.equal((await page.request.get(origin+'/icons/crt-displacement.png')).status(),200);
    await page.keyboard.press('Escape');
    await terminal.waitFor({state:'hidden'});
+   if(viewport.width===1440){
+    // An isolated stationary stripe probe verifies actual rendered pixel displacement.
+    await page.evaluate(()=>{
+     const probe=document.createElement('div');probe.id='crt-pixel-probe';
+     Object.assign(probe.style,{position:'fixed',left:'30px',top:'30px',width:'260px',height:'160px',background:'repeating-linear-gradient(0deg,#fff 0 8px,#000 8px 16px)',zIndex:'1000',pointerEvents:'none'});
+     document.body.append(probe);
+    });
+    const probe=page.locator('#crt-pixel-probe');
+    const flat=await probe.screenshot({animations:'disabled'});
+    await probe.evaluate(el=>{el.style.filter='url("#mirco-crt-warp")';});
+    await page.waitForFunction(()=>getComputedStyle(document.querySelector('#crt-pixel-probe')).filter!=='none');
+    const warped=await probe.screenshot({animations:'disabled'});
+    assert.notDeepEqual(flat,warped,'CRT must change rendered pixels, not merely CSS state');
+    await probe.evaluate(el=>el.remove());
+   }
    await page.keyboard.press('Control+Shift+K');
    await terminal.locator('input').fill('retro');
    await terminal.locator('input').press('Enter');
