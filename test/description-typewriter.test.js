@@ -48,3 +48,11 @@ test('reduced motion and hidden tabs cancel partial typing',()=>{
  h.doc.hidden=true;h.listeners.get('visibilitychange')();assert.equal(h.jobs.size,0);
  h.controller.dispose();assert.equal(h.listeners.size,0);
 });
+
+test('interrupted erasing does not skip the next unshown phrase',()=>{
+ const h=harness();h.step();
+ h.doc.hidden=true;h.listeners.get('visibilitychange')();
+ assert.equal(h.node.textContent,'First.');
+ h.doc.hidden=false;h.listeners.get('visibilitychange')();
+ h.until('Second.');h.until('Third.');h.controller.dispose();
+});
