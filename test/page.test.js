@@ -15,7 +15,7 @@ test('head-only interactive mascot',()=>{const html=render(config());assert.matc
 
 test('optional ASCII background',()=>{assert.match(render(config()),/id="ascii-background"/);assert.match(render(config()),/ascii-background\.js/);const html=render(config({SITE_ASCII_BACKGROUND:'false'}));assert.ok(!html.includes('id="ascii-background"'));assert.ok(!html.includes('ascii-background.js'));});
 
-test('animated face layers',()=>{const html=render(config());assert.match(html,/id="hearts"/);assert.match(html,/id="sleep-symbols"/);assert.match(html,/mascot\.js\?v=robot-9/);});
+test('animated face layers',()=>{const html=render(config());assert.match(html,/id="hearts"/);assert.match(html,/id="sleep-symbols"/);assert.match(html,/mascot\.js\?v=dev/);});
 
 test('header uses original brand mark',()=>{const html=render(config());assert.match(html,/<img src="\/images\/brand\/mark\.svg" width="48" height="28" alt="MIRCO"/);assert.ok(!html.includes('<span class="brand">MIRCO</span>'));});
 
@@ -23,10 +23,12 @@ test('contact uses SVG arrow icon',()=>{const html=render(config({SITE_EMAIL:'he
 
 test('runtime manifest and metadata',()=>{const c=config({SITE_NAME:'Example',SITE_LANGUAGE:'ro'});const m=manifest(c);assert.equal(m.name,'Example');assert.equal(m.lang,'ro');assert.equal(m.start_url,'/');assert.equal(m.display,'browser');assert.equal(m.icons.length,3);assert.ok(m.icons.some(i=>i.purpose==='maskable'));const html=render(c);assert.match(html,/rel="manifest" href="\/manifest\.webmanifest"/);assert.match(html,/name="theme-color" content="#191717"/);assert.match(html,/property="og:locale" content="ro_RO"/);assert.ok(html.includes('https://mirco.uk/images/social/mirco.png'));});
 
-test('refined mascot SVG uses clipped reflection and dynamic accents',()=>{const html=render(config());for(const id of ['screen-blue','screen-clip','screen-shine','face-glow-alpha','blush'])assert.ok(html.includes('id="'+id+'"'));assert.match(html,/style\.css\?v=fixed-mascot-1/);assert.match(html,/clip-path="url\(#screen-clip\)"/);});
+test('refined mascot SVG uses clipped reflection and dynamic accents',()=>{const html=render(config());for(const id of ['screen-blue','screen-clip','screen-shine','face-glow-alpha','blush'])assert.ok(html.includes('id="'+id+'"'));assert.match(html,/style\.css\?v=dev/);assert.match(html,/clip-path="url\(#screen-clip\)"/);});
 
 test('mascot remains fixed across viewport sizes without reserving hero space',()=>{const css=readFileSync(new URL('../public/style.css',import.meta.url),'utf8');const rules=[...css.matchAll(/\.mascot\s*\{([^}]+)\}/g)].map(m=>m[1]);assert.ok(rules.length>=2);assert.match(rules[0],/position:fixed/);assert.match(rules[0],/bottom:calc\(100px \+ env\(safe-area-inset-bottom,0px\)\)/);assert.ok(rules.some(rule=>rule.includes('bottom:calc(80px + env(safe-area-inset-bottom,0px))')));assert.ok(rules.every(rule=>! /position:\s*(absolute|relative|static|sticky)/.test(rule)));assert.ok(!css.includes('.shell:has(.mascot) .hero'));assert.match(css,/header,footer,\.hero > \.contact\{z-index:11\}/);});
 
 test('five new facial expressions have dedicated SVG layers',()=>{const html=render(config());for(const id of ['tears','spiral-eyes','scared-eyes','wavy-mouth'])assert.ok(html.includes('id="'+id+'"'));});
 
 test('sleeping mascot has three independently animated Z glyphs',()=>{const html=render(config());for(const id of ['sleep-z1','sleep-z2','sleep-z3'])assert.ok(html.includes('id="'+id+'"'));});
+
+test('decorative title and description layers are hidden by default without CSS',()=>{const html=render(config());assert.match(html,/class="typewriter-measure" aria-hidden="true" hidden/);assert.match(html,/class="typewriter-display" aria-hidden="true" hidden/);assert.match(html,/class="title-glitch-layer title-glitch-upper" aria-hidden="true" hidden/);assert.match(html,/class="title-glitch-layer title-glitch-lower" aria-hidden="true" hidden/);});
