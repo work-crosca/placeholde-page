@@ -9,11 +9,12 @@ function exercise(run,assert){
   let now=1000,raf=0,randomValue=.5;
   const listeners=()=>({events:{},addEventListener(n,f){(this.events[n]??=[]).push(f);},emit(n,e={}){for(const f of this.events[n]||[])f(e);}});
   const node=()=>Object.assign(listeners(),{attrs:{},dataset:{},setAttribute(k,v){this.attrs[k]=String(v);},getBoundingClientRect(){return {left:100,top:200,width:180,height:150};}});
-  const nodes=Object.fromEntries(['#head','#eyes','#eye-left','#eye-right','#mouth','#face','#blush','#screen-shine','#face-glow-alpha','#hearts','#tears','#spiral-eyes','#scared-eyes','#wavy-mouth','#sleep-symbols'].map(k=>[k,node()]));
+  const nodes=Object.fromEntries(['#head','#eyes','#eye-left','#eye-right','#mouth','#face','#blush','#screen-shine','#face-glow-alpha','#hearts','#tears','#spiral-eyes','#scared-eyes','#wavy-mouth','#sleep-symbols','#sleep-z1','#sleep-z2','#sleep-z3'].map(k=>[k,node()]));
   const svg=Object.assign(node(),{querySelector:k=>nodes[k]});
   const button=Object.assign(node(),{querySelector:()=>svg});
   const root=listeners(),win=Object.assign(listeners(),{scrollY:0,innerWidth:1000,dispatchEvent(){}});
-  const doc=Object.assign(listeners(),{hidden:false,documentElement:root,querySelector:k=>k==='.mascot'?button:null});
+  const contact=node(),social=node();
+  const doc=Object.assign(listeners(),{hidden:false,documentElement:root,querySelector:k=>k==='.mascot'?button:k==='.contact'?contact:k==='.social'?social:null});
   const queue=new Map();
   run({Math:Object.assign(Object.create(Math),{random:()=>randomValue}),document:doc,window:win,matchMedia:q=>Object.assign(listeners(),{matches:q.includes('reduced-motion')&&reduced}),performance:{now:()=>now},requestAnimationFrame:f=>{queue.set(++raf,f);return raf;},cancelAnimationFrame:id=>queue.delete(id),setTimeout:()=>1,clearTimeout(){},navigator:{},CustomEvent:class{}});
   function frame(ms=16){now+=ms;const pending=[...queue.values()];queue.clear();for(const f of pending)f(now);}
@@ -54,7 +55,7 @@ function exercise(run,assert){
   for(let i=0;i<15;i++)frame(16);
   assert.ok(Number(nodes['#blush'].attrs.opacity)>.3);assert.ok(Number(nodes['#hearts'].attrs.opacity)>.8);
   assert.ok(Number(nodes['#face-glow-alpha'].attrs.slope)>.3);
-  if(!reduced){frame(31000);for(let i=0;i<20;i++)frame(16);assert.equal(button.dataset.emotion,'sleepy');assert.ok(Number(nodes['#face'].attrs.opacity)<.65);}
+  if(!reduced){frame(33000);for(let i=0;i<40;i++)frame(16);assert.equal(button.dataset.emotion,'sleepy');assert.ok(Number(nodes['#face'].attrs.opacity)<.65);}
   const pool=['happy','sad','surprised','love','suspicious','bored','confused','excited','shy','angry','curious','laughing','scared','crying','dizzy','proud'];
   const newPoses={laughing:null,scared:'#scared-eyes',crying:'#tears',dizzy:'#spiral-eyes',proud:null};
   for(const [name,layer] of Object.entries(newPoses)){
@@ -70,6 +71,32 @@ function exercise(run,assert){
    if(name==='proud')assert.ok(nodes['#head'].attrs.transform.includes('rotate(-'));
    move(60);move(10);assert.equal(button.dataset.emotion,'angry');assert.equal(nodes['#face'].attrs.stroke,'#ff777e');assert.equal(Number(nodes['#tears'].attrs.opacity),0);assert.equal(Number(nodes['#spiral-eyes'].attrs.opacity),0);assert.equal(Number(nodes['#scared-eyes'].attrs.opacity),0);move(80);frame();
   }
+  doc.emit('visibilitychange');
+  frame(19999);assert.notEqual(button.dataset.state,'drowsy');
+  frame(1);if(!reduced){
+   assert.equal(button.dataset.state,'drowsy');assert.equal(button.dataset.emotion,'drowsy');
+   frame(2000);assert.equal(button.dataset.emotion,'slow-blink');
+   frame(650);assert.equal(button.dataset.emotion,'drowsy');
+   frame(7350);assert.equal(button.dataset.state,'yawning');
+   for(let i=0;i<50;i++)frame(20);
+   assert.ok(Number(nodes['#mouth'].attrs['fill-opacity'])>.9);
+   frame(999);assert.equal(button.dataset.state,'yawning');
+   frame(1);assert.equal(button.dataset.state,'sleeping');assert.equal(button.dataset.emotion,'sleepy');
+   for(let i=0;i<40;i++)frame(20);
+   assert.ok(Number(nodes['#sleep-symbols'].attrs.opacity)>.8);
+   const glyph=nodes['#sleep-z1'].attrs.transform,headPose=nodes['#head'].attrs.transform;
+   frame(100);assert.notEqual(nodes['#sleep-z1'].attrs.transform,glyph);assert.notEqual(nodes['#head'].attrs.transform,headPose);
+   move(100);assert.equal(button.dataset.state,'waking');assert.equal(button.dataset.emotion,'neutral');
+   frame(449);assert.equal(button.dataset.state,'waking');
+   move(100);frame(1);assert.equal(button.dataset.emotion,'happy');
+   frame(1000);assert.equal(button.dataset.emotion,'neutral');
+   for(let i=0;i<20;i++)frame(16);assert.ok(Number(nodes['#sleep-symbols'].attrs.opacity)<.05);
+   doc.emit('visibilitychange');frame(20000);win.emit('keydown');assert.equal(button.dataset.state,'waking');frame(450);assert.equal(button.dataset.emotion,'happy');
+   doc.emit('visibilitychange');frame(30000);win.scrollY=10;win.emit('scroll');assert.equal(button.dataset.state,'waking');
+   doc.emit('visibilitychange');frame(32000);contact.emit('pointerenter',{pointerType:'mouse'});assert.equal(button.dataset.emotion,'excited');frame(40000);assert.equal(button.dataset.emotion,'excited');contact.emit('pointerleave');frame();assert.equal(button.dataset.emotion,'neutral');
+   frame(32000);social.emit('pointerenter',{pointerType:'mouse'});assert.equal(button.dataset.emotion,'curious');social.emit('pointerleave');frame(32000);move(60);move(10);assert.equal(button.dataset.emotion,'angry');assert.equal(Number(nodes['#sleep-symbols'].attrs.opacity),0);
+   move(100);doc.emit('visibilitychange');frame(32000);win.emit('pointerdown',{pointerType:'touch',isPrimary:true,clientX:100,clientY:100});assert.equal(button.dataset.state,'waking');
+  }else{frame(40000);assert.notEqual(button.dataset.state,'sleeping');assert.equal(button.dataset.emotion,'neutral');}
  }
  scenario();scenario(true);
 }
