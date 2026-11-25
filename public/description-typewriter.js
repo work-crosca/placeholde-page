@@ -2,7 +2,7 @@
 export function createTypewriter({node,phrases,motion,document:doc,setTimer,clearTimer,random=Math.random,onActiveChange=()=>{}}){
  const pool=[...new Set(phrases.filter(p=>typeof p==='string'&&p.length))];
  if(pool.length<2)return {dispose(){}};
- let current=0,shown=Array.from(pool[0]),timer=null,remaining=pool.map((_,i)=>i).slice(1);
+ let first=true,current=0,shown=Array.from(pool[0]),timer=null,remaining=pool.map((_,i)=>i).slice(1);
  const active=()=>!doc.hidden&&!motion.matches;
  const delay=(min,max)=>Math.round(min+random()*(max-min));
  function cancel(){if(timer!==null)clearTimer(timer);timer=null;}
@@ -13,7 +13,7 @@ export function createTypewriter({node,phrases,motion,document:doc,setTimer,clea
   const i=Math.min(remaining.length-1,Math.floor(random()*remaining.length));
   return remaining.splice(i,1)[0];
  }
- function hold(){later(erase,delay(5000,11000));}
+ function hold(){const wait=first?delay(1800,3000):delay(5000,11000);first=false;later(erase,wait);}
  function erase(){
   if(shown.length){shown.pop();show();later(erase,delay(22,40));return;}
   current=next();later(()=>type(Array.from(pool[current])),delay(150,260));
