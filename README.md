@@ -32,6 +32,7 @@ All options are runtime environment variables, so one image can serve multiple d
 | SITE_TELEGRAM | empty | Telegram username without @; hides the icon when unset or invalid |
 | SITE_ASCII_BACKGROUND | true | Set false to disable the animated decorative ASCII background |
 | SITE_MASCOT | true | Set false to hide mascot |
+| SITE_GOOGLE_ANALYTICS_ID | empty | Optional GA4 measurement ID (G-XXXXXXXXXX) |
 
 ## Coolify
 
@@ -54,7 +55,7 @@ Alternatively: `docker build -t placeholder-page .` then `docker run --rm -p 300
 - / returns 200 in coming-soon mode, 503 with Retry-After in maintenance.
 - /health returns 200; unknown paths return 404.
 - robots.txt and noindex prevent indexing of temporary content. Remove these restrictions when replacing the placeholder with the actual website.
-- No analytics, tracking, fake countdown, newsletter or external assets. Telegram is the only social link; set SITE_TELEGRAM to display it.
+- No analytics or external tracking by default. Optional GA4 is enabled only with a valid SITE_GOOGLE_ANALYTICS_ID. No fake countdown or newsletter. Telegram is the only social link; set SITE_TELEGRAM to display it.
 
 ## Verification
 
@@ -97,3 +98,7 @@ On desktop, right-clicking the placeholder opens a compact two-action menu in th
 ## Animated heading and description
 
 The heading uses a 460 ms double-pulse glitch, initially after 1.8–3.2 seconds and then every 6.5–14 seconds. Default coming-soon descriptions rotate through eight localized phrases (EN/RO/RU), holding the first phrase for 1.8–3 seconds, then subsequent complete phrases for 5–11 seconds before erasing and typing the next in shuffled order without immediate repetition. The longest rendered phrase reserves space at the current viewport width. Custom SITE_DESCRIPTION is the first phrase in the rotation; maintenance descriptions remain static. Set SITE_TYPEWRITER=false to keep the description static. Both effects stop when the document is hidden or reduced motion is requested. Metadata and accessible description remain stable.
+
+## Optional Google Analytics 4
+
+Set `SITE_GOOGLE_ANALYTICS_ID=G-ENKKEVJ415` (or your own measurement ID) as a runtime environment variable in Coolify and redeploy. Leave it empty to disable analytics. A valid ID enables the Google tag and standard page-view measurement, with advertising personalization and Google Signals disabled. The initializer is a local external script; CSP allows Google endpoints only when analytics is enabled. No cookie-consent UI is included; enable only when your privacy and consent requirements are met. Verify collection in GA4 Realtime or Tag Assistant after deployment.
