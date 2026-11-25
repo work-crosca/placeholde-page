@@ -109,6 +109,16 @@ function exercise(run,assert){
   }else{frame(40000);assert.notEqual(button.dataset.state,'sleeping');assert.equal(button.dataset.emotion,'neutral');}
   // Explicit mouse events never become touch gestures even in a narrow viewport.
   if(!reduced){narrow=true;randomValue=0;doc.emit('visibilitychange');frame(1000);button.emit('click',{pointerType:'mouse',detail:1});frame(100);button.emit('click',{pointerType:'mouse',detail:2});assert.notEqual(button.dataset.emotion,'love');narrow=false;}
+  // Touch release handles the gesture before compatibility mouse clicks arrive.
+  doc.emit('visibilitychange');frame(1200);
+  for(let i=0;i<2;i++){
+   button.emit('pointerdown',{pointerType:'touch',isPrimary:true,pointerId:7,clientX:180,clientY:250});
+   win.emit('pointerdown',{pointerType:'touch',isPrimary:true,clientX:180,clientY:250});
+   win.emit('pointerup',{type:'pointerup',pointerId:7,clientX:180,clientY:250});
+   button.emit('click',{pointerType:'mouse',detail:1});
+   frame(100);
+  }
+  assert.equal(button.dataset.emotion,'love');
   // An unconfirmed top-edge preview expires even with reduced motion.
   doc.emit('visibilitychange');move(80);move(10);assert.equal(button.dataset.emotion,'angry');frame(1799);assert.equal(button.dataset.emotion,'angry');frame(1);assert.equal(button.dataset.emotion,'neutral');
   // Confirmation cancels expiry and preserves the browser-exit reaction.

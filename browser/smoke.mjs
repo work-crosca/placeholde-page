@@ -40,14 +40,22 @@ try{
    await page.locator('.motion-toggle').click();
    await page.waitForFunction(()=>document.documentElement.dataset.motionPaused==='false');
    const cursor=await page.evaluate(()=>({
+    fine:matchMedia('(hover:hover) and (pointer:fine)').matches,
     idle:getComputedStyle(document.documentElement).cursor,
     pointer:getComputedStyle(document.querySelector('.motion-toggle')).cursor,
     text:getComputedStyle(document.querySelector('.hero h1')).cursor
    }));
-   assert.match(cursor.idle,/cursor-idle\.svg/);
-   assert.match(cursor.pointer,/cursor-pointer\.svg/);
-   assert.equal(cursor.text,'text');
-   assert.match(cursor.idle,/\?v=[a-f0-9]{16}/);
+   if(cursor.fine){
+    assert.match(cursor.idle,/cursor-idle\.svg/);
+    assert.match(cursor.pointer,/cursor-pointer\.svg/);
+    assert.equal(cursor.text,'text');
+    assert.match(cursor.idle,/\?v=[a-f0-9]{16}/);
+   }else{
+    // Firefox headless can report no fine pointer. Verify the native fallback instead.
+    assert.doesNotMatch(cursor.idle,/cursor-idle\.svg/);
+    assert.doesNotMatch(cursor.pointer,/cursor-pointer\.svg/);
+    console.log(engine+' reports no fine hover pointer; native cursor fallback verified');
+   }
    if(engine==='chromium'){await page.emulateMedia({forcedColors:'active'});assert.doesNotMatch(await page.locator('html').evaluate(el=>getComputedStyle(el).cursor),/cursor-idle\.svg/);await page.emulateMedia({forcedColors:'none'});}
    for(const path of ['/icons/cursor-idle.svg','/icons/cursor-pointer.svg'])assert.equal((await page.request.get(origin+path)).status(),200);
   }
@@ -83,7 +91,7 @@ try{
  {
   const b=await mascot.boundingBox();
   await touch.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);await touch.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);
-  assert.equal(await mascot.getAttribute('data-emotion'),'love');
+  await touch.waitForFunction(()=>document.querySelector('.mascot').dataset.emotion==='love',null,{timeout:2000});
  }
  await touch.close();
  }

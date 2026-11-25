@@ -11,6 +11,7 @@ const sleepGlyphs=['#sleep-z1','#sleep-z2','#sleep-z3'].map(id=>svg.querySelecto
 // The shared motion preference is provided by the ES module import.
 const mobile=matchMedia('(max-width: 700px), (pointer: coarse)');
 const coarse=matchMedia('(pointer: coarse)');
+let handledTouchAt=-Infinity;
 let browserExit=null,edgeMouse=null,lastInput='mouse',touchUntil=0,press=null,pressTimer=0,suppressClick=false,lastTouchTap=-Infinity,lastScroll=window.scrollY,scrollAt=-Infinity;
 const random=(a,b)=>a+Math.random()*(b-a);
 let mascotBounds=null;
@@ -142,7 +143,7 @@ function explicit(name,now=performance.now(),duration=1400){
 window.addEventListener('pointerdown',e=>{
  if(e.isPrimary===false)return;
  const now=performance.now();
- if(e.pointerType!=='touch'){lastInput=e.pointerType||'mouse';resume(now);return;}
+ if(e.pointerType!=='touch'){lastInput=e.pointerType||'mouse';handledTouchAt=-Infinity;suppressClick=false;resume(now);return;}
  lastInput='touch';edgeMouse=null;endBrowserExit();
  resume(now);
  if(!motion.matches){pointer={x:e.clientX,y:e.clientY};touchUntil=now+1500;}
@@ -156,19 +157,38 @@ button.addEventListener('pointerdown',e=>{
 window.addEventListener('pointermove',e=>{
  if(press&&e.pointerId===press.id&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>12){clearTimeout(pressTimer);press=null;}
 },{passive:true});
-function release(e){if(press&&e.pointerId===press.id){clearTimeout(pressTimer);press=null;}if(e.type==='pointercancel')suppressClick=false;}
+function release(e){
+ if(press&&e.pointerId===press.id){
+  clearTimeout(pressTimer);press=null;
+  if(e.type==='pointerup'){
+   handledTouchAt=performance.now();
+   if(!suppressClick){
+    const rect=bounds();
+    if(e.clientX>=rect.left&&e.clientX<=rect.left+rect.width&&e.clientY>=rect.top&&e.clientY<=rect.top+rect.height)reactToClick(true,handledTouchAt);
+   }
+   suppressClick=false;
+  }
+ }
+ if(e.type==='pointercancel')suppressClick=false;
+}
 window.addEventListener('pointerup',release,{passive:true});
 window.addEventListener('pointercancel',release,{passive:true});
 button.addEventListener('contextmenu',e=>{if(press||suppressClick)e.preventDefault();});
-button.addEventListener('click',e=>{
- if(suppressClick&&e.detail!==0){suppressClick=false;return;}
- suppressClick=false;
- const now=performance.now(),touch=e.pointerType?e.pointerType==='touch':e.detail>0&&lastInput==='touch'&&coarse.matches;
+function reactToClick(touch,now){
+
  clicks=now-lastClick<700?clicks+1:1;lastClick=now;
  const double=touch&&now-lastTouchTap<350;
  if(touch)lastTouchTap=double?-Infinity:now;
  pulse=1;explicit(double?'love':clicks>=3?(clicks%2?'confused':'angry'):choose(),now);
  feedback(double?25:18);ripple();
+}
+button.addEventListener('click',e=>{
+ const now=performance.now();
+ // WebKit may synthesize a delayed mouse click after a touch release.
+ if(e.detail!==0&&(suppressClick||now-handledTouchAt<1000)){suppressClick=false;return;}
+ suppressClick=false;
+ const touch=e.pointerType?e.pointerType==='touch':e.detail>0&&lastInput==='touch'&&coarse.matches;
+ reactToClick(touch,now);
 });
 window.addEventListener('scroll',()=>{
  invalidateBounds();
@@ -200,7 +220,7 @@ for(const [selector,name] of contexts){
 }
 function reset(){
  faceRgb=rgb(baseColor);cancelAnimationFrame(frame);clearTimeout(reducedTimer);clearTimeout(pressTimer);clearEdge();
- press=null;suppressClick=false;edgeMouse=null;hover=null;clearPointer();invalidateBounds();
+ press=null;suppressClick=false;handledTouchAt=-Infinity;edgeMouse=null;hover=null;clearPointer();invalidateBounds();
  const now=performance.now();activity=now;idleAt=now+random(4000,8000);blinkAt=now+random(3000,6000);secondBlink=0;
  for(const context of activeContexts){
   context.inside=!document.hidden&&lastInput!=='touch'&&Boolean(context.el.matches?.(':hover'));
