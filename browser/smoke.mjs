@@ -76,10 +76,13 @@ try{
    assert.equal(await terminal.locator('.terminal-maximize').getAttribute('aria-pressed'),'false');
    await terminal.locator('input').fill('help');
    await terminal.locator('input').press('Enter');
+   await page.waitForFunction(()=>document.querySelector('.terminal-output').textContent.includes('whoami'));
+   assert.ok((await terminal.locator('.terminal-output').boundingBox()).height>=48);
    assert.match(await terminal.locator('.terminal-output').innerText(),/whoami/);
    await terminal.locator('.terminal-minimize').click();
    await terminal.waitFor({state:'hidden'});
    await page.keyboard.press('Control+Shift+K');
+   await terminal.waitFor({state:'visible'});
    assert.match(await terminal.locator('.terminal-output').innerText(),/whoami/);
    await terminal.locator('.terminal-close').click();
    await terminal.waitFor({state:'hidden'});

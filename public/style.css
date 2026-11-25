@@ -100,7 +100,7 @@ html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
 
 
 /* macOS-inspired window chrome, with native modal accessibility. */
-.mirco-terminal{position:fixed;inset:0;margin:auto;width:min(640px,calc(100% - 32px));height:fit-content;max-width:none;max-height:calc(100% - 32px);padding:0;border:1px solid rgba(185,231,255,.14);border-radius:12px;color:#c4dfff;background:#10151d;font:inherit;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.6),0 4px 16px rgba(0,0,0,.3)}
+.mirco-terminal{position:fixed;inset:0;margin:auto;width:min(640px,calc(100% - 32px));height:min(360px,calc(100% - 32px));max-width:none;max-height:calc(100% - 32px);padding:0;border:1px solid rgba(185,231,255,.14);border-radius:12px;color:#c4dfff;background:#10151d;font:inherit;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.6),0 4px 16px rgba(0,0,0,.3)}
 .mirco-terminal[open]{display:flex;flex-direction:column}
 .mirco-terminal.is-expanded{width:min(1000px,calc(100% - 32px));height:calc(100% - 32px)}
 .mirco-terminal::backdrop{background:rgba(8,12,18,.68)}
@@ -115,7 +115,7 @@ html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
 .terminal-window-button:focus-visible,.terminal-run:focus-visible,.terminal-form input:focus-visible,.terminal-output:focus-visible{outline:2px solid #9fd8ff;outline-offset:-2px;border-radius:5px}
 .terminal-title{font:600 .82rem/1.2 "Space Grotesk",Arial,sans-serif;color:#b7bfcb;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .terminal-content{display:flex;flex-direction:column;flex:1;min-height:0;padding:16px 18px 18px;gap:12px;overflow:auto}
-.terminal-output{font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;height:min(260px,40vh);min-height:0;flex:1 1 auto;overflow:auto;overflow-wrap:anywhere;user-select:text;margin:0}
+.terminal-output{font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;min-height:48px;flex:1 1 0;overflow:auto;overflow-wrap:anywhere;user-select:text;margin:0}
 .terminal-form{display:flex;align-items:center;gap:10px;flex:none;color:#9fd8ff}
 .terminal-run{color:#c4dfff;background:#25384d;border:0;border-radius:7px;padding:9px 12px;font:inherit}
 .terminal-form input{font:inherit;color:#c4dfff;flex:1;min-width:0;background:#0b1018;border:1px solid #293747;border-radius:7px;padding:8px;user-select:text}
