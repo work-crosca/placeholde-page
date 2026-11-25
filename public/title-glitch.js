@@ -1,6 +1,6 @@
 // Brief, low-amplitude digital distortion. Decorative copies are hidden unless active.
 export function createGlitchController({title,layers=[],motion,document:doc,setTimer,clearTimer,random=Math.random}){
- let timer=null;
+ let timer=null, first=true;
  const active=()=>!doc.hidden&&!motion.matches;
  function stop(){
   if(timer!==null)clearTimer(timer);
@@ -10,13 +10,15 @@ export function createGlitchController({title,layers=[],motion,document:doc,setT
  function schedule(){
   stop();
   if(!active())return;
+  const wait=first?Math.round(1800+random()*1400):Math.round(6500+random()*7500);
+  first=false;
   timer=setTimer(()=>{
    timer=null;
    if(!active())return;
    for(const layer of layers)layer.hidden=false;
    title.classList.add('is-glitching');
-   timer=setTimer(schedule,320);
-  },Math.round(6500+random()*7500));
+   timer=setTimer(schedule,460);
+  },wait);
  }
  motion.addEventListener('change',schedule);
  doc.addEventListener('visibilitychange',schedule);
