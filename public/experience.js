@@ -50,13 +50,21 @@ function line(value,className=''){append(element('div',className,value));}
 function build(){return new URL(import.meta.url).searchParams.get('v')||terminalCopy.unavailable;}
 function fetchInfo(){
  const banner=element('div','terminal-fetch');
- const art=element('pre','terminal-logo',logo);art.setAttribute('aria-label','MIRCO');art.setAttribute('role','img');
+ // Render the original ASCII matrix as fixed vector cells, independent of fallback fonts.
+ const art=element('div','terminal-logo');art.setAttribute('aria-label','MIRCO');art.setAttribute('role','img');
+ const source=element('pre','terminal-logo-source',logo);source.setAttribute('aria-hidden','true');
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ svg.setAttribute('viewBox','0 0 33 11.2');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');
+ const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+ let cells='';
+ logo.split('\n').forEach((row,y)=>{[...row].forEach((char,x)=>{if(char==='█')cells+='M'+x+' '+(y*1.6)+'h1v1.6h-1z';});});
+ path.setAttribute('d',cells);path.setAttribute('fill','currentColor');svg.append(path);art.append(source,svg);
  const info=element('div','terminal-info');
  info.append(element('strong','terminal-host','visitor@mirco'),element('div','terminal-session',terminalCopy.session));
  const fields=[[terminalCopy.system,'MIRCO OS'],[terminalCopy.shell,'mirco-shell'],[terminalCopy.theme,'Midnight Blue'],[terminalCopy.status,document.querySelector('.status')?.textContent.trim()||terminalCopy.unavailable],[terminalCopy.mascot,document.querySelector('.mascot')?terminalCopy.enabled:terminalCopy.disabled]];
  for(const [label,value] of fields){const row=element('div','terminal-info-row');row.append(element('span','terminal-info-label',label+': '),element('span','',value));info.append(row);}
  const palette=element('div','terminal-palette');palette.setAttribute('aria-hidden','true');for(let i=0;i<7;i++)palette.append(element('span'));
- info.append(palette);banner.append(art,info);append(banner);
+ info.append(palette);const divider=element('div','terminal-fetch-divider');divider.setAttribute('aria-hidden','true');banner.append(art,divider,info);append(banner);
 }
 function boot(){output.replaceChildren();fetchInfo();line(copy.intro,'terminal-hint');output.scrollTop=0;booted=true;}
 function open(){if(dialog.open)return;previousFocus=document.activeElement;dialog.showModal();if(!booted)boot();input.focus();}

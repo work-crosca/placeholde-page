@@ -70,7 +70,15 @@ try{
    assert.equal(await terminal.locator('.terminal-logo').getAttribute('aria-label'),'MIRCO');
    assert.ok((await terminal.locator('.terminal-logo').textContent()).split('\n').every(row=>row.length===33));
    assert.match(await terminal.locator('.terminal-info').innerText(),/MIRCO OS/);
-   assert.ok(await terminal.locator('.terminal-logo').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+   const bannerGeometry=await terminal.locator('.terminal-fetch').evaluate(el=>{
+    const logo=el.querySelector('.terminal-logo'),svg=logo.querySelector('svg'),info=el.querySelector('.terminal-info'),out=el.closest('.terminal-output');
+    const a=logo.getBoundingClientRect(),b=info.getBoundingClientRect(),c=svg.getBoundingClientRect();
+    return {stacked:b.top>=a.bottom,width:a.width,height:a.height,svgWidth:c.width,svgHeight:c.height,overflow:logo.scrollWidth>logo.clientWidth+1||logo.scrollHeight>logo.clientHeight+1,bootOverflow:out.scrollHeight>out.clientHeight+1};
+   });
+   assert.ok(bannerGeometry.stacked&&bannerGeometry.width>0&&bannerGeometry.height>0);
+   assert.ok(Math.abs(bannerGeometry.width-bannerGeometry.svgWidth)<1&&Math.abs(bannerGeometry.height-bannerGeometry.svgHeight)<1);
+   assert.equal(bannerGeometry.overflow,false);
+   assert.equal(bannerGeometry.bootOverflow,false,'fresh boot should fit at '+JSON.stringify(viewport));
    const command=terminal.locator('input');
    await command.fill('neo');await command.press('Tab');assert.equal(await command.inputValue(),'neofetch');
    await command.press('Enter');assert.equal(await terminal.locator('.terminal-logo').count(),2);
