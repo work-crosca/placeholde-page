@@ -1,10 +1,10 @@
 // Original parametric SVG animation. One state controller owns all expressions.
 const button=document.querySelector('.mascot');
 if(button){
-const svg=button.querySelector('svg'),head=svg.querySelector('#head'),eyes=svg.querySelector('#eyes'),left=svg.querySelector('#eye-left'),right=svg.querySelector('#eye-right'),mouth=svg.querySelector('#mouth'),hearts=svg.querySelector('#hearts'),sleep=svg.querySelector('#sleep-symbols');
+const svg=button.querySelector('svg'),head=svg.querySelector('#head'),eyes=svg.querySelector('#eyes'),left=svg.querySelector('#eye-left'),right=svg.querySelector('#eye-right'),mouth=svg.querySelector('#mouth'),face=svg.querySelector('#face'),hearts=svg.querySelector('#hearts'),sleep=svg.querySelector('#sleep-symbols');
 const motion=matchMedia('(prefers-reduced-motion: reduce)');
 const mobile=matchMedia('(max-width: 700px), (pointer: coarse)');
-let touchUntil=0,press=null,pressTimer=0,suppressClick=false,lastTouchTap=-Infinity,lastScroll=window.scrollY,scrollAt=-Infinity;
+let browserExit=null,touchUntil=0,press=null,pressTimer=0,suppressClick=false,lastTouchTap=-Infinity,lastScroll=window.scrollY,scrollAt=-Infinity;
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const random=(a,b)=>a+Math.random()*(b-a);
 // Eye geometry: horizontal half-span, vertical half-span, curve, stroke, offset.
@@ -46,8 +46,10 @@ function paint(now,dt){
  const smile=current[10],open=current[11];
  mouth.setAttribute('d',`M${112+open*2} ${119-open*4}Q120 ${119+smile+open*13} ${128-open*2} ${119-open*4}Q120 ${119+smile-open*8} ${112+open*2} ${119-open*4}Z`);
  mouth.setAttribute('fill-opacity',open);
- let aim=pointer;
- if(hover){const b=hover.el.getBoundingClientRect();aim={x:b.left+b.width/2,y:b.top+b.height/2};}
+ const faceColor=browserExit?'#ff777e':'#9fd8ff';
+ face.setAttribute('stroke',faceColor);face.setAttribute('fill',faceColor);
+ let aim=browserExit?{x:browserExit.x,y:-100}:pointer;
+ if(!browserExit&&hover){const b=hover.el.getBoundingClientRect();aim={x:b.left+b.width/2,y:b.top+b.height/2};}
  let tx=0,ty=0;
  if(aim&&state!=='sleeping'&&!motion.matches){const b=svg.getBoundingClientRect();tx=clamp((aim.x-b.left-b.width/2)/Math.max(75,b.width*1.25),-1,1);ty=clamp((aim.y-b.top-b.height/2)/Math.max(75,b.width*1.25),-1,1);}
  const ek=1-Math.exp(-dt/65),hk=1-Math.exp(-dt/150);
@@ -58,7 +60,9 @@ function paint(now,dt){
  const breathe=motion.matches?0:Math.sin(now/1000)*1.8;
  pulse*=Math.exp(-dt/170);
  const squash=motion.matches?0:Math.sin(pulse*Math.PI)*.09;
- head.setAttribute('transform',`translate(${hx} ${hy+breathe}) rotate(${tilt} 120 90) translate(120 90) scale(${1+squash} ${1-squash}) translate(-120 -90)`);
+ const elapsed=browserExit?now-browserExit.at:Infinity;
+ const shake=motion.matches||elapsed>=420?0:Math.sin(elapsed/25)*3*(1-elapsed/420);
+ head.setAttribute('transform',`translate(${hx+shake} ${hy+breathe}) rotate(${tilt} 120 90) translate(120 90) scale(${1+squash} ${1-squash}) translate(-120 -90)`);
  sleep.setAttribute('opacity',state==='sleeping'?'0.85':'0');
 }
 function resume(now){activity=now;idleAt=now+random(4000,8000);if(state==='sleeping'){set('happy','reaction',1000,now);}}
@@ -68,7 +72,8 @@ function tick(now){
  if(mobile.matches&&previous&&now-previous<1000/30-1){frame=requestAnimationFrame(tick);return;}
  if(touchUntil&&now>=touchUntil){pointer=null;touchUntil=0;}
  const dt=Math.min(50,Math.max(1,now-(previous||now-16)));previous=now;
- if(hover){if(emotion!==hover.name)set(hover.name,'context',Infinity,now);}
+ if(browserExit){if(emotion!=='angry'||state!=='context')set('angry','context',Infinity,now);}
+ else if(hover){if(emotion!==hover.name)set(hover.name,'context',Infinity,now);}
  else if(state==='context')normal(now);
  else if(now-activity>=30000&&state!=='sleeping')set('sleepy','sleeping',Infinity,now);
  else if(state==='reaction'&&now>=until)normal(now);
@@ -81,7 +86,9 @@ function tick(now){
 function start(){cancelAnimationFrame(frame);frame=0;previous=0;if(!document.hidden&&!motion.matches)frame=requestAnimationFrame(tick);}
 function ripple(){if(motion.matches)return;const b=svg.getBoundingClientRect();window.dispatchEvent(new CustomEvent('mascot:ripple',{detail:{x:b.left+b.width/2,y:b.top+b.height/2}}));}
 window.addEventListener('pointermove',e=>{
- if(e.pointerType==='touch'||motion.matches)return;
+ if(e.pointerType==='touch')return;
+ endBrowserExit();
+ if(motion.matches)return;
  const now=performance.now();resume(now);touchUntil=0;pointer={x:e.clientX,y:e.clientY};
  const b=svg.getBoundingClientRect(),close=Math.hypot(e.clientX-b.left-b.width/2,e.clientY-b.top-b.height/2)<b.width*.65;
  if(!hover&&['idle','tracking'].includes(state)){
@@ -91,11 +98,20 @@ window.addEventListener('pointermove',e=>{
  near=close;lastPointer={...pointer,t:now};
 },{passive:true});
 function clearPointer(){pointer=null;touchUntil=0;near=false;lastPointer=null;}
-document.documentElement.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch')clearPointer();});window.addEventListener('blur',clearPointer);
 let reducedTimer;
+// Browser chrome is inaccessible: a top-edge mouse exit is only a proxy for tab-close intent.
+function endBrowserExit(){if(!browserExit)return;browserExit=null;const now=performance.now();resume(now);blinkAt=now+random(3000,6000);secondBlink=0;if(hover)set(hover.name,'context',Infinity,now);else normal(now);}
+document.documentElement.addEventListener('pointerleave',e=>{
+ if(e.pointerType==='touch')return;
+ clearPointer();
+ if(e.pointerType!=='mouse'||e.clientY>8||e.relatedTarget||browserExit)return;
+ clearTimeout(reducedTimer);hover=null;const now=performance.now();resume(now);browserExit={x:e.clientX,at:now};set('angry','context',Infinity,now);
+});
+document.documentElement.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')endBrowserExit();});
+window.addEventListener('blur',()=>{clearPointer();endBrowserExit();});
 function feedback(ms=18){try{if(typeof navigator.vibrate==='function')navigator.vibrate(ms);}catch{}}
 function explicit(name,now=performance.now(),duration=1400){
- hover=null;resume(now);set(name,'reaction',duration,now);
+ browserExit=null;hover=null;resume(now);set(name,'reaction',duration,now);
  if(motion.matches){clearTimeout(reducedTimer);reducedTimer=setTimeout(()=>normal(performance.now()),duration);}
 }
 window.addEventListener('pointerdown',e=>{
@@ -143,7 +159,7 @@ for(const [selector,name] of contexts){const el=document.querySelector(selector)
   el.addEventListener('focus',()=>{if(performance.now()-touchAt>1000){focused=true;update();}});el.addEventListener('blur',()=>{focused=false;update();});
  }
 }
-function reset(){cancelAnimationFrame(frame);clearTimeout(reducedTimer);clearTimeout(pressTimer);press=null;suppressClick=false;hover=null;clearPointer();const now=performance.now();activity=now;idleAt=now+random(4000,8000);blinkAt=now+random(3000,6000);secondBlink=0;normal(now);start();}
+function reset(){cancelAnimationFrame(frame);clearTimeout(reducedTimer);clearTimeout(pressTimer);press=null;suppressClick=false;browserExit=null;hover=null;clearPointer();const now=performance.now();activity=now;idleAt=now+random(4000,8000);blinkAt=now+random(3000,6000);secondBlink=0;normal(now);start();}
 document.addEventListener('visibilitychange',reset);motion.addEventListener('change',reset);mobile.addEventListener('change',reset);
 set(motion.matches?'neutral':'happy',motion.matches?'idle':'reaction',1200);start();
 }
