@@ -43,7 +43,8 @@ test('text selection uses the branded palette, including gradient headings',()=>
 
 test('circular cursor uses centered hotspots, preserves text selection and limits itself to fine pointers',()=>{
  const css=readFileSync(new URL('../public/style.css',import.meta.url),'utf8');
- assert.match(css,/@media \(hover:hover\) and \(pointer:fine\) and \(forced-colors:none\)/);
+ assert.match(css,/@media \(hover:hover\) and \(pointer:fine\)/);
+ assert.match(css,/@media \(forced-colors:active\)/);
  assert.match(css,/cursor:url\("\/icons\/cursor-idle\.svg\?v=__ASSET_VERSION__"\) 12 12,default/);
  assert.match(css,/cursor:url\("\/icons\/cursor-pointer\.svg\?v=__ASSET_VERSION__"\) 12 12,pointer/);
  assert.match(css,/\.description,\.hero h1,[^{}]*\{cursor:text\}/);

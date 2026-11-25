@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 // Run the real controller in a deterministic DOM/timer harness; modules are tested separately.
 const expressions=readFileSync(new URL('../public/mascot/expressions.js',import.meta.url),'utf8').replaceAll('export const ','const ');
-const source=expressions+"\nconst motion=matchMedia('(prefers-reduced-motion: reduce)');\nconst attachPlacement=()=>{};\n"+readFileSync(new URL('../public/mascot.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
+const renderer=readFileSync(new URL('../public/mascot/renderer.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replaceAll('export function ','function ');
+const source=expressions+'\n'+renderer+"\nconst motion=matchMedia('(prefers-reduced-motion: reduce)');\nconst attachPlacement=()=>{};\n"+readFileSync(new URL('../public/mascot.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
 
 function exercise(run,assert){
  function scenario(reduced=false){

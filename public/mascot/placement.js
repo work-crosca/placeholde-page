@@ -24,7 +24,7 @@ export function choosePlacement({preferred,viewport,obstacles,gap=8,minWidth=80}
 export function getVisibleViewport(doc,win){
  const v=win.visualViewport;
  const viewport=v?{left:v.offsetLeft,top:v.offsetTop,width:v.width,height:v.height}:{left:0,top:0,width:doc.documentElement.clientWidth,height:doc.documentElement.clientHeight};
- // CSS exposes physical safe-area insets via a non-rendered measuring element.
+ // CSS exposes physical safe-area insets as resolved custom properties.
  const style=win.getComputedStyle?.(doc.documentElement);
  const inset=side=>Math.max(0,parseFloat(style?.getPropertyValue('--safe-'+side))||0);
  const left=inset('left'),right=inset('right'),top=inset('top'),bottom=inset('bottom');

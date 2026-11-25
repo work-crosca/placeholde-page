@@ -10,7 +10,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test",
-    "build": "node --check server.js && node --check public/mascot.js && node --check src/page.js && node --check public/ascii-background.js && node --check public/context-menu.js && node --check public/title-glitch.js && node --check public/description-typewriter.js && node --check public/analytics.js && node --check public/motion-preference.js && node --check public/mascot/expressions.js && node --check public/mascot/placement.js",
+    "build": "node --check server.js && node --check public/mascot.js && node --check src/page.js && node --check public/ascii-background.js && node --check public/context-menu.js && node --check public/title-glitch.js && node --check public/description-typewriter.js && node --check public/analytics.js && node --check public/motion-preference.js && node --check public/mascot/expressions.js && node --check public/mascot/placement.js && node --check public/mascot/renderer.js",
     "test:browser": "node browser/smoke.mjs",
     "lint": "npm exec --yes --package=eslint@9.39.1 -- eslint server.js src public test browser",
     "format": "npm exec --yes --package=prettier@3.6.2 -- prettier --write server.js src public test browser",
