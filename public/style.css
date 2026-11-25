@@ -59,3 +59,6 @@ header,footer,.hero > .contact{z-index:11}
 @media(prefers-reduced-motion:reduce){.typewriter-cursor{visibility:hidden}}
 
 button,input,select,textarea{font-family:inherit}
+
+/* Keep selected copy legible against the dark MIRCO palette. */
+::selection{background:#9fd8ff;color:#191717;-webkit-text-fill-color:#191717}

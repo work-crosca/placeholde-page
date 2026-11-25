@@ -15,10 +15,15 @@ const assetVersion=hash.digest('hex').slice(0,16);
 const analyticsPolicy=settings.analyticsId
  ? "script-src 'self' https://www.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; img-src 'self' https://*.google-analytics.com https://*.googletagmanager.com;"
  : "script-src 'self'; img-src 'self';";
-const server=http.createServer(async(req,res)=>{
- const path=new URL(req.url,'http://localhost').pathname;
+export const server=http.createServer(async(req,res)=>{
  const headers={'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; "+analyticsPolicy+" style-src 'self'; font-src 'self'; manifest-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"};
  const send=(status,type,body,extra={})=>{res.writeHead(status,{...headers,'Content-Type':type,...extra});res.end(req.method==='HEAD'?undefined:body);};
+ try{
+ let path;
+ try{
+  if(typeof req.url!=='string'||!req.url.startsWith('/')||req.url.startsWith('//')||req.url.includes('\\\\'))throw new Error('Invalid request target');
+  path=new URL(req.url,'http://localhost').pathname;
+ }catch{return send(400,'text/plain','Bad request');}
  if(!['GET','HEAD'].includes(req.method))return send(405,'text/plain','Method not allowed',{Allow:'GET, HEAD'});
  if(path==='/manifest.webmanifest')return send(200,'application/manifest+json; charset=utf-8',JSON.stringify(manifest(settings)),{'Cache-Control':'no-cache'});
  if(path==='/health')return send(200,'application/json','{"status":"ok"}');
@@ -27,5 +32,11 @@ const server=http.createServer(async(req,res)=>{
  if(path==='/robots.txt')return send(200,'text/plain','User-agent: *\nDisallow: /\n');
  if(path!=='/')return send(404,'text/plain','Not found');
  return send(settings.mode==='maintenance'?503:200,'text/html; charset=utf-8',render(settings,assetVersion),{'Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow',...(settings.mode==='maintenance'?{'Retry-After':'3600'}:{})});
+ }catch(error){
+  console.error('Request failed:',error);
+  if(!res.headersSent)return send(500,'text/plain','Internal server error');
+  res.destroy();
+ }
 });
-server.listen(Number(process.env.PORT||3000),'0.0.0.0');
+// Importable for integration tests; only the CLI entrypoint starts listening.
+if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1])server.listen(Number(process.env.PORT||3000),'0.0.0.0');
