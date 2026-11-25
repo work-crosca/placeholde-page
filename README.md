@@ -102,3 +102,7 @@ The heading uses a 460 ms double-pulse glitch, initially after 1.8–3.2 seconds
 ## Optional Google Analytics 4
 
 Set `SITE_GOOGLE_ANALYTICS_ID=G-ENKKEVJ415` (or your own measurement ID) as a runtime environment variable in Coolify and redeploy. Leave it empty to disable analytics. A valid ID enables the Google tag and standard page-view measurement, with advertising personalization and Google Signals disabled. The initializer is a local external script; CSP allows Google endpoints only when analytics is enabled. No cookie-consent UI is included; enable only when your privacy and consent requirements are met. Verify collection in GA4 Realtime or Tag Assistant after deployment.
+
+## Typography
+
+Space Grotesk is self-hosted via the pinned Fontsource variable package (SIL Open Font License), using Latin and Latin Extended WOFF2 subsets and weights 300–700. All page UI uses this family, with Arial/Helvetica fallback for unsupported glyphs such as Cyrillic. The heading uses weight 700. No third-party font requests or environment variables are required.
