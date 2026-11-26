@@ -118,15 +118,28 @@ try{
    assert.match(await page.locator('.hero h1').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-title/);
    assert.match(await terminal.locator('.terminal-output').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-terminal/);
    const optics=await page.evaluate(()=>{
-    const targets=[['.hero h1','mirco-crt-title'],['.hero .description','mirco-crt-description'],['.terminal-output','mirco-crt-terminal']];
+    const targets=[['.hero h1','mirco-crt-title'],['.hero .description','mirco-crt-description'],['.terminal-output','mirco-crt-terminal'],['.page-crt-scanlines','mirco-crt-scanlines'],['.terminal-crt-scanlines','mirco-crt-terminal-scanlines']];
     return targets.map(([selector,id])=>{
      const box=document.querySelector(selector).getBoundingClientRect(),filter=document.getElementById(id),image=filter.querySelector('feImage');
-     const reference=id==='mirco-crt-terminal'?document.querySelector('.mirco-terminal').getBoundingClientRect():{left:0,top:0,width:document.documentElement.clientWidth,height:document.documentElement.clientHeight};
-     return {units:filter.getAttribute('primitiveUnits'),x:box.left+Number(image.getAttribute('x'))-reference.left,y:box.top+Number(image.getAttribute('y'))-reference.top,width:Number(image.getAttribute('width'))-reference.width,scale:Number(filter.querySelector('feDisplacementMap').getAttribute('scale')),pad:Number(filter.getAttribute('x'))};
+     const reference=id.startsWith('mirco-crt-terminal')?document.querySelector('.terminal-content').getBoundingClientRect():{left:0,top:0,width:document.documentElement.clientWidth,height:document.documentElement.clientHeight};
+     return {units:filter.getAttribute('primitiveUnits'),x:box.left+Number(image.getAttribute('x'))-reference.left,y:box.top+Number(image.getAttribute('y'))-reference.top,width:Number(image.getAttribute('width'))-reference.width,scale:Number(filter.querySelector('feDisplacementMap').getAttribute('scale')),pad:Number(filter.getAttribute('x')),gx:Number(filter.querySelector('feFuncR').getAttribute('slope')),gy:Number(filter.querySelector('feFuncG').getAttribute('slope')),ratio:reference.width/reference.height};
     });
    });
-   for(const item of optics){assert.equal(item.units,'userSpaceOnUse');assert.ok(Math.abs(item.x)<2&&Math.abs(item.y)<2&&Math.abs(item.width)<2);assert.ok(item.scale>0&&item.scale<=32&&item.pad<=-item.scale/2);}
-   assert.ok(optics[2].scale<=10);
+   for(const item of optics){assert.equal(item.units,'userSpaceOnUse');assert.ok(Math.abs(item.x)<2&&Math.abs(item.y)<2&&Math.abs(item.width)<2);assert.ok(item.scale>20&&item.scale<=180&&item.pad<=-item.scale/2);assert.ok(Math.abs(item.gx/item.gy-item.ratio)<.001);}
+   assert.ok(optics[2].scale<=100);
+   assert.equal(optics[0].scale,optics[3].scale);
+   assert.equal(optics[2].scale,optics[4].scale);
+   assert.match(await page.locator('.page-crt-scanlines').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-scanlines/);
+   assert.match(await terminal.locator('.terminal-crt-scanlines').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-terminal-scanlines/);
+   assert.equal(await terminal.locator('.terminal-header').evaluate(el=>getComputedStyle(el).filter),'none');
+   if(viewport.width===1440){
+    const output=terminal.locator('.terminal-output');
+    const warped=await output.screenshot({animations:'disabled'});
+    await output.evaluate(el=>{el.style.filter='none';});
+    const flat=await output.screenshot({animations:'disabled'});
+    assert.notDeepEqual(flat,warped,'terminal output pixels must actually warp');
+    await output.evaluate(el=>el.style.removeProperty('filter'));
+   }
    assert.equal(await terminal.locator('input').evaluate(el=>getComputedStyle(el).filter),'none');
    assert.equal(await page.locator('.shell').evaluate(el=>getComputedStyle(el,'::after').borderRadius),'0px');
    assert.equal(await page.locator('.contact').evaluate(el=>getComputedStyle(el).filter),'none');

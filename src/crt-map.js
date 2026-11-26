@@ -1,11 +1,11 @@
 import {deflateSync} from 'node:zlib';
-import {crtPoint} from '../public/terminal-core.js';
-// Self-hosted opaque RGB PNG. R/G encode inverse radial sampling coordinates;
-// neutral center, increasing displacement toward the edges. No external image or CSP relaxation.
+// Self-hosted opaque RGB map for inverse barrel sampling. A normalized cubic
+// radial field keeps the optical center neutral and progressively bends edges.
+// The browser applies aspect gains and an independently bounded pixel scale.
 export function displacementChannels(x,y){
- const [px,py]=crtPoint(x,y,1,1,.075);
- const channel=value=>Math.max(0,Math.min(255,Math.round(255*(.5+value/.2))));
- return [channel(x-px),channel(y-py),128];
+ const nx=2*x-1,ny=2*y-1,r2=(nx*nx+ny*ny)/2;
+ const channel=value=>Math.max(0,Math.min(255,Math.round(255*(.5+.45*value))));
+ return [channel(nx*r2),channel(ny*r2),128];
 }
 function crc32(bytes){
  let crc=0xffffffff;

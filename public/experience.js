@@ -43,7 +43,9 @@ prompt.setAttribute('aria-hidden','true');
 const inputWrap=element('div','terminal-input-wrap'),caret=element('span','terminal-caret');
 caret.setAttribute('aria-hidden','true');inputWrap.append(input,caret);
 form.append(prompt,inputWrap,run);
-const content=element('div','terminal-content');content.append(output,form);dialog.append(header,content);document.body.append(dialog);
+const content=element('div','terminal-content');
+const scanlines=element('div','terminal-crt-scanlines');scanlines.setAttribute('aria-hidden','true');
+content.append(output,form,scanlines);dialog.append(header,content);document.body.append(dialog);
 let previousFocus=null,booted=false;
 const history=createHistory();
 function append(node){output.append(node);while(output.children.length>50)output.firstElementChild.remove();output.scrollTop=output.scrollHeight;}
