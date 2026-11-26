@@ -8,6 +8,13 @@ test('CRT displacement map is neutral in center and radially symmetric',()=>{
  assert.ok(left[0]<128&&right[0]>128&&corner[0]<left[0]&&corner[1]<128);
  assert.equal(left[1],128);assert.ok(Math.abs(left[0]+right[0]-255)<=1);
 });
+test('radial displacement grows cubically toward the edge without channel saturation',()=>{
+ const near=displacementChannels(.75,.5)[0]-128,edge=displacementChannels(1,.5)[0]-128;
+ assert.ok(near>0&&edge>=near*6);
+ const corner=displacementChannels(1,1);
+ assert.ok(corner[0]>=240&&corner[0]<255&&corner[0]===corner[1]);
+ assert.equal(displacementChannels(.5,0)[0],128);
+});
 test('CRT map is an opaque RGB PNG with expected scanlines',()=>{
  const map=makeCrtMap(9);assert.equal(map.subarray(1,4).toString(),'PNG');assert.equal(map.readUInt32BE(16),9);assert.equal(map[25],2);
  const length=map.readUInt32BE(33);assert.equal(map.subarray(37,41).toString(),'IDAT');
