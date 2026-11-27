@@ -115,26 +115,26 @@ try{
    await terminal.locator('input').fill('retro');
    await terminal.locator('input').press('Enter');
    assert.equal(await page.locator('html').evaluate(el=>el.classList.contains('mirco-retro')),true);
-   const root=page.locator('html');
+   const root=page.locator('.crt-screen');
    await page.waitForFunction(()=>document.documentElement.dataset.crtReady==='true');
    assert.match(await root.evaluate(el=>getComputedStyle(el).filter),/mirco-crt-screen/);
    const optics=await page.evaluate(()=>{
-    const root=document.documentElement,box=root.getBoundingClientRect(),filter=document.getElementById('mirco-crt-screen'),image=filter.querySelector('feImage');
-    return {count:document.querySelectorAll('.crt-filter-defs filter').length,units:filter.getAttribute('primitiveUnits'),x:box.left+Number(image.getAttribute('x')),y:box.top+Number(image.getAttribute('y')),width:Number(image.getAttribute('width'))-root.clientWidth,scale:Number(filter.querySelector('feDisplacementMap').getAttribute('scale')),pad:Number(filter.getAttribute('x')),gx:Number(filter.querySelector('feFuncR').getAttribute('slope')),gy:Number(filter.querySelector('feFuncG').getAttribute('slope')),ratio:root.clientWidth/root.clientHeight};
+    const root=document.documentElement,box=document.querySelector('.crt-screen').getBoundingClientRect(),filter=document.getElementById('mirco-crt-screen'),image=filter.querySelector('feImage');
+    return {count:document.querySelectorAll('.crt-filter-defs filter').length,units:filter.getAttribute('primitiveUnits'),x:Number(image.getAttribute('x')),y:Number(image.getAttribute('y')),width:Number(image.getAttribute('width'))-box.width,scale:Number(filter.querySelector('feDisplacementMap').getAttribute('scale')),pad:Number(filter.getAttribute('x')),gx:Number(filter.querySelector('feFuncR').getAttribute('slope')),gy:Number(filter.querySelector('feFuncG').getAttribute('slope')),ratio:root.clientWidth/root.clientHeight};
    });
    assert.equal(optics.count,1);assert.equal(optics.units,'userSpaceOnUse');
    assert.ok(Math.abs(optics.x)<2&&Math.abs(optics.y)<2&&Math.abs(optics.width)<2);
    assert.ok(optics.scale>20&&optics.scale<=180&&optics.pad<=-optics.scale/2);
    assert.ok(Math.abs(optics.gx/optics.gy-optics.ratio)<.001);
-   for(const selector of ['.hero h1','.contact','.mirco-terminal','.terminal-header','.terminal-content','.terminal-output','.terminal-prompt','.terminal-form input']){
+   for(const selector of ['html','.hero h1','.contact','.mirco-terminal','.terminal-header','.terminal-content','.terminal-output','.terminal-prompt','.terminal-form input']){
     assert.equal(await page.locator(selector).evaluate(el=>getComputedStyle(el).filter),'none');
    }
    assert.equal(await page.locator('.terminal-crt-scanlines').count(),0);
    assert.equal(await page.locator('.shell').evaluate(el=>el.inert),true);
    assert.equal(await terminal.getAttribute('aria-modal'),'true');
    assert.equal(await terminal.evaluate(el=>el.matches(':modal')),false);
-   assert.equal(await page.locator('body').evaluate(el=>getComputedStyle(el,'::after').borderRadius),'0px');
-   assert.match(await page.locator('body').evaluate(el=>getComputedStyle(el,'::after').backgroundImage),/repeating-linear-gradient/);
+   assert.equal(await root.evaluate(el=>getComputedStyle(el,'::after').borderRadius),'0px');
+   assert.match(await root.evaluate(el=>getComputedStyle(el,'::after').backgroundImage),/repeating-linear-gradient/);
    assert.equal((await page.request.get(origin+'/icons/crt-displacement.png')).status(),200);
    if(viewport.width===1440){
     // Compare the actual composed terminal with only the root filter disabled.

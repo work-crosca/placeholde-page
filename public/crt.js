@@ -1,5 +1,4 @@
-// A single physical CRT screen: document, terminal, and glass are composited
-// together. The map is anchored to the visible viewport, even when scrolling.
+// A single viewport-sized compositing surface, not the browser's root element.
 export function filterGeometry(box,frame){
  const longest=Math.max(frame.width,frame.height,1),shortest=Math.min(frame.width,frame.height);
  const scale=Math.min(180,longest*.13,shortest*.24);
@@ -10,13 +9,27 @@ export function filterGeometry(box,frame){
 }
 if(typeof document!=='undefined'){
  const root=document.documentElement,filter=document.getElementById('mirco-crt-screen');
+ const surface=document.querySelector('.crt-screen'),scroller=document.querySelector('.crt-scroll');
  let frame=0;
  const attrs=(node,values)=>{for(const [key,value] of Object.entries(values))node.setAttribute(key,String(value));};
  function sync(){
   frame=0;
-  if(!root.classList.contains('mirco-retro')||!filter){delete root.dataset.crtReady;return;}
-  const box=root.getBoundingClientRect();
-  const screen={left:0,top:0,width:root.clientWidth,height:root.clientHeight};
+  if(!filter||!surface||!scroller)return;
+  if(!root.classList.contains('mirco-retro')){
+   if(root.dataset.crtReady==='true'){
+    const y=scroller.scrollTop;
+    delete root.dataset.crtReady;
+    window.scrollTo(0,y);
+   }
+   return;
+  }
+  if(root.dataset.crtReady!=='true'){
+   const y=window.scrollY;
+   root.dataset.crtReady='true';
+   scroller.scrollTop=y;
+  }
+  const box=surface.getBoundingClientRect();
+  const screen={left:box.left,top:box.top,width:box.width,height:box.height};
   if(!box.width||!box.height||!screen.width||!screen.height)return;
   const geometry=filterGeometry(box,screen);
   attrs(filter,geometry.region);
@@ -32,9 +45,10 @@ if(typeof document!=='undefined'){
  window.addEventListener('mirco:crt-layout',schedule);
  window.addEventListener('resize',schedule,{passive:true});
  window.addEventListener('scroll',schedule,{passive:true});
+ scroller?.addEventListener('scroll',()=>{if(root.dataset.crtReady==='true')window.dispatchEvent(new Event('scroll'));},{passive:true});
  window.visualViewport?.addEventListener('resize',schedule,{passive:true});
  document.fonts?.ready.then(schedule);
  if(typeof ResizeObserver==='function'){
-  const observer=new ResizeObserver(schedule);observer.observe(root);observer.observe(document.body);
+  const observer=new ResizeObserver(schedule);observer.observe(root);if(surface)observer.observe(surface);
  }
 }

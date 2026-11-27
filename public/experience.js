@@ -47,7 +47,7 @@ const content=element('div','terminal-content');
 content.append(output,form);dialog.append(header,content);
 const shell=document.querySelector('.shell'),root=document.documentElement;
 const backdrop=element('div','terminal-backdrop');backdrop.hidden=true;backdrop.setAttribute('aria-hidden','true');
-document.body.append(backdrop,dialog);
+document.querySelector('.crt-screen').append(backdrop,dialog);
 let previousFocus=null,booted=false,previousInert=false;
 const history=createHistory();
 function append(node){output.append(node);while(output.children.length>50)output.firstElementChild.remove();output.scrollTop=output.scrollHeight;}
