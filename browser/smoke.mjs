@@ -115,46 +115,55 @@ try{
    await terminal.locator('input').fill('retro');
    await terminal.locator('input').press('Enter');
    assert.equal(await page.locator('html').evaluate(el=>el.classList.contains('mirco-retro')),true);
-   assert.match(await page.locator('.hero h1').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-title/);
-   assert.match(await terminal.locator('.terminal-output').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-terminal/);
+   const root=page.locator('.crt-screen');
+   await page.waitForFunction(()=>document.documentElement.dataset.crtReady==='true');
+   assert.match(await root.evaluate(el=>getComputedStyle(el).filter),/mirco-crt-screen/);
    const optics=await page.evaluate(()=>{
-    const targets=[['.hero h1','mirco-crt-title'],['.hero .description','mirco-crt-description'],['.terminal-output','mirco-crt-terminal'],['.page-crt-scanlines','mirco-crt-scanlines'],['.terminal-crt-scanlines','mirco-crt-terminal-scanlines']];
-    return targets.map(([selector,id])=>{
-     const box=document.querySelector(selector).getBoundingClientRect(),filter=document.getElementById(id),image=filter.querySelector('feImage');
-     const reference=id.startsWith('mirco-crt-terminal')?document.querySelector('.terminal-content').getBoundingClientRect():{left:0,top:0,width:document.documentElement.clientWidth,height:document.documentElement.clientHeight};
-     return {units:filter.getAttribute('primitiveUnits'),x:box.left+Number(image.getAttribute('x'))-reference.left,y:box.top+Number(image.getAttribute('y'))-reference.top,width:Number(image.getAttribute('width'))-reference.width,scale:Number(filter.querySelector('feDisplacementMap').getAttribute('scale')),pad:Number(filter.getAttribute('x')),gx:Number(filter.querySelector('feFuncR').getAttribute('slope')),gy:Number(filter.querySelector('feFuncG').getAttribute('slope')),ratio:reference.width/reference.height};
-    });
+    const root=document.documentElement,box=document.querySelector('.crt-screen').getBoundingClientRect(),filter=document.getElementById('mirco-crt-screen'),image=filter.querySelector('feImage');
+    return {count:document.querySelectorAll('.crt-filter-defs filter').length,units:filter.getAttribute('primitiveUnits'),x:Number(image.getAttribute('x')),y:Number(image.getAttribute('y')),width:Number(image.getAttribute('width'))-box.width,scale:Number(filter.querySelector('feDisplacementMap').getAttribute('scale')),pad:Number(filter.getAttribute('x')),gx:Number(filter.querySelector('feFuncR').getAttribute('slope')),gy:Number(filter.querySelector('feFuncG').getAttribute('slope')),ratio:root.clientWidth/root.clientHeight};
    });
-   for(const item of optics){assert.equal(item.units,'userSpaceOnUse');assert.ok(Math.abs(item.x)<2&&Math.abs(item.y)<2&&Math.abs(item.width)<2);assert.ok(item.scale>20&&item.scale<=180&&item.pad<=-item.scale/2);assert.ok(Math.abs(item.gx/item.gy-item.ratio)<.001);}
-   assert.ok(optics[2].scale<=100);
-   assert.equal(optics[0].scale,optics[3].scale);
-   assert.equal(optics[2].scale,optics[4].scale);
-   assert.match(await page.locator('.page-crt-scanlines').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-scanlines/);
-   assert.match(await terminal.locator('.terminal-crt-scanlines').evaluate(el=>getComputedStyle(el).filter),/mirco-crt-terminal-scanlines/);
-   assert.equal(await terminal.locator('.terminal-header').evaluate(el=>getComputedStyle(el).filter),'none');
-   if(viewport.width===1440){
-    const output=terminal.locator('.terminal-output');
-    const warped=await output.screenshot({animations:'disabled'});
-    await output.evaluate(el=>{el.style.filter='none';});
-    const flat=await output.screenshot({animations:'disabled'});
-    assert.notDeepEqual(flat,warped,'terminal output pixels must actually warp');
-    await output.evaluate(el=>el.style.removeProperty('filter'));
+   assert.equal(optics.count,1);assert.equal(optics.units,'userSpaceOnUse');
+   assert.ok(Math.abs(optics.x)<2&&Math.abs(optics.y)<2&&Math.abs(optics.width)<2);
+   assert.ok(optics.scale>20&&optics.scale<=180&&optics.pad<=-optics.scale/2);
+   assert.ok(Math.abs(optics.gx/optics.gy-optics.ratio)<.001);
+   for(const selector of ['html','.hero h1','.contact','.mirco-terminal','.terminal-header','.terminal-content','.terminal-output','.terminal-prompt','.terminal-form input']){
+    assert.equal(await page.locator(selector).evaluate(el=>getComputedStyle(el).filter),'none');
    }
-   assert.equal(await terminal.locator('input').evaluate(el=>getComputedStyle(el).filter),'none');
-   assert.equal(await page.locator('.shell').evaluate(el=>getComputedStyle(el,'::after').borderRadius),'0px');
-   assert.equal(await page.locator('.contact').evaluate(el=>getComputedStyle(el).filter),'none');
+   assert.equal(await page.locator('.terminal-crt-scanlines').count(),0);
+   assert.equal(await page.locator('.shell').evaluate(el=>el.inert),true);
+   assert.equal(await terminal.getAttribute('aria-modal'),'true');
+   assert.equal(await terminal.evaluate(el=>el.matches(':modal')),false);
+   assert.equal(await root.evaluate(el=>getComputedStyle(el,'::after').borderRadius),'0px');
+   assert.match(await root.evaluate(el=>getComputedStyle(el,'::after').backgroundImage),/repeating-linear-gradient/);
    assert.equal((await page.request.get(origin+'/icons/crt-displacement.png')).status(),200);
+   if(viewport.width===1440){
+    // Compare the actual composed terminal with only the root filter disabled.
+    const warped=await terminal.screenshot({animations:'disabled'});
+    await root.evaluate(el=>{el.style.filter='none';});
+    const flat=await terminal.screenshot({animations:'disabled'});
+    assert.notDeepEqual(flat,warped,'global CRT must warp the terminal frame and contents');
+    await root.evaluate(el=>el.style.removeProperty('filter'));
+   }
+   await terminal.locator('.terminal-close').focus();
+   await page.keyboard.press('Shift+Tab');
+   assert.ok(await terminal.evaluate(el=>el.contains(document.activeElement)));
+   // A non-matching command avoids the terminal's intentional Tab completion.
+   if(await terminal.locator('input').evaluate(el=>el===document.activeElement))await terminal.locator('input').fill('zz-no-match');
+   await page.keyboard.press('Tab');
+   assert.equal(await terminal.locator('.terminal-close').evaluate(el=>el===document.activeElement),true);
    await page.keyboard.press('Escape');
    await terminal.waitFor({state:'hidden'});
+   assert.equal(await page.locator('.shell').evaluate(el=>el.inert),false);
+   assert.equal(await page.locator('.terminal-backdrop').isVisible(),false);
+   assert.match(await root.evaluate(el=>getComputedStyle(el).filter),/mirco-crt-screen/);
    if(viewport.width===1440){
-    // Freeze motion, compare the actual heading with and without the CRT filter.
     await page.locator('.motion-toggle').click();
     const heading=page.locator('.hero h1');
     const warped=await heading.screenshot({animations:'disabled'});
-    await heading.evaluate(el=>{el.style.filter='none';});
+    await root.evaluate(el=>{el.style.filter='none';});
     const flat=await heading.screenshot({animations:'disabled'});
-    assert.notDeepEqual(flat,warped,'CRT must change heading pixels');
-    await heading.evaluate(el=>el.style.removeProperty('filter'));
+    assert.notDeepEqual(flat,warped,'global CRT must warp the page');
+    await root.evaluate(el=>el.style.removeProperty('filter'));
     await page.locator('.motion-toggle').click();
    }
    await page.keyboard.press('Control+Shift+K');

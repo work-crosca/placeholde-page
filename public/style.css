@@ -101,9 +101,12 @@ html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
 
 /* macOS-inspired window chrome, with native modal accessibility. */
 .mirco-terminal{position:fixed;inset:0;margin:auto;width:min(640px,calc(100% - 32px));height:min(490px,calc(100% - 32px));max-width:none;max-height:calc(100% - 32px);padding:0;border:1px solid rgba(185,231,255,.14);border-radius:12px;color:#c4dfff;background:#10151d;font:inherit;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.6),0 4px 16px rgba(0,0,0,.3)}
-.mirco-terminal[open]{display:flex;flex-direction:column}
+.mirco-terminal[open]{display:flex;flex-direction:column;z-index:61}
+.terminal-backdrop{position:fixed;inset:0;z-index:60;background:rgba(8,12,18,.68)}
+.terminal-backdrop[hidden]{display:none}
+html.mirco-terminal-open{overflow:hidden}
 .mirco-terminal.is-expanded{width:min(1000px,calc(100% - 32px));height:calc(100% - 32px)}
-.mirco-terminal::backdrop{background:rgba(8,12,18,.68)}
+/* The terminal deliberately stays in document paint order, beneath CRT glass. */
 .terminal-header{display:grid;grid-template-columns:66px minmax(0,1fr) 66px;align-items:center;min-height:40px;padding:0 10px;background:#252931;border-bottom:1px solid rgba(0,0,0,.4);flex:none;user-select:none}
 .terminal-window-controls{display:flex;align-items:center;gap:0}
 .terminal-window-button{appearance:none;display:grid;place-items:center;flex:none;width:20px;height:34px;padding:0;border:0;background:transparent;color:#3a1410}
@@ -122,31 +125,20 @@ html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
 @media(max-width:420px){.terminal-header{grid-template-columns:66px minmax(0,1fr) 66px;padding:0 6px}.terminal-content{padding:12px}.terminal-form{gap:6px}.terminal-run{padding:9px 8px}.terminal-form input{font-size:16px}}
 @media(pointer:coarse){.terminal-header{min-height:48px;grid-template-columns:84px minmax(0,1fr) 84px}.terminal-window-button{width:28px;height:44px}.terminal-window-dot{width:15px;height:15px;color:#35211a}}
 @media(forced-colors:active){.terminal-window-dot{color:ButtonText;background:ButtonFace!important;border:1px solid ButtonText}}
-/* CRT optics: a shared radial field for decorative page surfaces, and a separate
-   glass origin for the terminal. Native interactive controls stay unwarped. */
+/* One viewport-sized optical surface. A non-root filter is required by Firefox;
+   its containing block matches the viewport. Scroll the page inside it. */
 .crt-filter-defs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
-.page-crt-scanlines,.terminal-crt-scanlines{display:none;pointer-events:none;inset:0;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(140,197,255,.09) 3px 4px)}
-.mirco-retro .page-crt-scanlines{display:block;position:fixed;z-index:12}
-.mirco-retro .terminal-crt-scanlines{display:block;position:absolute;z-index:2;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(140,197,255,.105) 3px 4px)}
-.mirco-retro[data-crt-ready="true"] #ascii-background{filter:url("#mirco-crt-warp")}
-.mirco-retro[data-crt-ready="true"] .hero h1{filter:url("#mirco-crt-title")}
-.mirco-retro[data-crt-ready="true"] .hero .description{filter:url("#mirco-crt-description")}
-.mirco-retro[data-crt-ready="true"] header .brand{filter:url("#mirco-crt-brand")}
-.mirco-retro[data-crt-ready="true"] header .status{filter:url("#mirco-crt-status")}
-.mirco-retro[data-crt-ready="true"] footer > span:first-child{filter:url("#mirco-crt-copyright")}
-.mirco-retro[data-crt-ready="true"] .page-crt-scanlines{filter:url("#mirco-crt-scanlines")}
-.mirco-retro[data-crt-ready="true"] .terminal-output{filter:url("#mirco-crt-terminal")}
-.mirco-retro[data-crt-ready="true"] .terminal-prompt{filter:url("#mirco-crt-prompt")}
-.mirco-retro[data-crt-ready="true"] .terminal-crt-scanlines{filter:url("#mirco-crt-terminal-scanlines")}
-.mirco-retro .shell::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:12;background:radial-gradient(ellipse at center,transparent 48%,rgba(3,8,17,.14) 74%,rgba(3,8,17,.48) 100%),radial-gradient(ellipse 46% 43% at 0 0,rgba(3,8,17,.58),transparent 88%),radial-gradient(ellipse 46% 43% at 100% 0,rgba(3,8,17,.58),transparent 88%),radial-gradient(ellipse 46% 43% at 0 100%,rgba(3,8,17,.58),transparent 88%),radial-gradient(ellipse 46% 43% at 100% 100%,rgba(3,8,17,.58),transparent 88%)}
-.mirco-retro .shell::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:12;background:radial-gradient(ellipse at 48% 0%,rgba(159,216,255,.055),transparent 45%),repeating-linear-gradient(90deg,rgba(110,160,255,.008) 0 1px,transparent 1px 3px)}
-.mirco-retro .hero .description,.mirco-retro .terminal-output,.mirco-retro .terminal-prompt{text-shadow:0 0 5px rgba(159,216,255,.24)}
+html[data-crt-ready="true"]{overflow:hidden}
+html[data-crt-ready="true"] .crt-screen{position:fixed;inset:0;overflow:hidden;background:#191717;filter:url("#mirco-crt-screen")}
+html[data-crt-ready="true"] .crt-scroll{height:100%;overflow:auto;overscroll-behavior:contain}
+html[data-crt-ready="true"].mirco-terminal-open .crt-scroll{overflow:hidden}
+.mirco-retro .crt-screen::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:100;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(140,197,255,.045) 3px 4px),radial-gradient(ellipse at center,transparent 48%,rgba(3,8,17,.14) 74%,rgba(3,8,17,.48) 100%),radial-gradient(ellipse 46% 43% at 0 0,rgba(3,8,17,.58),transparent 88%),radial-gradient(ellipse 46% 43% at 100% 0,rgba(3,8,17,.58),transparent 88%),radial-gradient(ellipse 46% 43% at 0 100%,rgba(3,8,17,.58),transparent 88%),radial-gradient(ellipse 46% 43% at 100% 100%,rgba(3,8,17,.58),transparent 88%)}
+.mirco-retro .crt-screen::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:100;background:radial-gradient(ellipse at 48% 0%,rgba(159,216,255,.055),transparent 45%),repeating-linear-gradient(90deg,rgba(110,160,255,.008) 0 1px,transparent 1px 3px)}
+.mirco-retro .hero .description,.mirco-retro .terminal-output{text-shadow:0 0 5px rgba(159,216,255,.20)}
 .mirco-retro .hero .title-text{text-shadow:-.35px 0 rgba(125,183,255,.14),.35px 0 rgba(190,135,255,.10)}
-.terminal-content{position:relative;isolation:isolate}
-.mirco-retro .terminal-content::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;background:radial-gradient(ellipse at center,transparent 44%,rgba(3,8,17,.10) 72%,rgba(3,8,17,.46) 100%),radial-gradient(ellipse at 50% 0,rgba(159,216,255,.05),transparent 58%)}
 @media(forced-colors:active){
- .mirco-retro[data-crt-ready="true"] :is(#ascii-background,.hero h1,.hero .description,header .brand,header .status,footer > span:first-child,.terminal-output,.terminal-prompt){filter:none}
- .mirco-retro .page-crt-scanlines,.mirco-retro .terminal-crt-scanlines,.mirco-retro .shell::before,.mirco-retro .shell::after,.mirco-retro .terminal-content::after{display:none}
+ html[data-crt-ready="true"] .crt-screen{filter:none}
+ .mirco-retro .crt-screen::before,.mirco-retro .crt-screen::after{display:none}
 }
 .mirco-matrix #ascii-background{mask-image:none;-webkit-mask-image:none;opacity:.72}
 .terminal-fetch{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin:0 0 12px;min-width:0}
@@ -180,5 +172,5 @@ html[data-motion-paused="true"] .typewriter-cursor{visibility:hidden}
 @media(max-width:600px){.terminal-content{padding:14px 14px 12px}.terminal-fetch{gap:9px}.terminal-form{flex-wrap:wrap}.terminal-prompt{flex-basis:100%}.terminal-form input{font-size:16px}.terminal-logo{width:min(100%,330px)}}
 @media(max-height:460px){.terminal-content{padding:10px 14px;gap:7px}.terminal-fetch{gap:6px;margin-bottom:7px}.terminal-logo{width:min(100%,220px)}.terminal-info{font-size:12px;line-height:1.3}.terminal-host{font-size:12px}.terminal-session{margin-bottom:3px}.terminal-palette{margin-top:5px}.terminal-output{font-size:12px;line-height:1.4}.terminal-form{padding-top:5px}}
 @media(max-height:240px){.terminal-content{overflow:auto}}
-@media(forced-colors:active){.mirco-retro .shell::before,.mirco-retro .shell::after,.mirco-retro .mirco-terminal[open]::after{display:none}.terminal-caret{background:CanvasText}.terminal-form input:focus-visible{outline:1px solid Highlight}.terminal-logo,.terminal-host,.terminal-info-label,.terminal-prompt{color:CanvasText}}
+@media(forced-colors:active){.mirco-retro .crt-screen::before,.mirco-retro .crt-screen::after{display:none}.terminal-caret{background:CanvasText}.terminal-form input:focus-visible{outline:1px solid Highlight}.terminal-logo,.terminal-host,.terminal-info-label,.terminal-prompt{color:CanvasText}}
 
