@@ -14,7 +14,7 @@ const terminalCopy={
 }[lang];
 const element=(tag,className,text)=>{const el=document.createElement(tag);if(className)el.className=className;if(text)el.textContent=text;return el;};
 const dialog=element('dialog','mirco-terminal');
-dialog.setAttribute('aria-label',copy.title);
+dialog.setAttribute('aria-label',copy.title);dialog.setAttribute('aria-modal','true');
 const header=element('div','terminal-header');
 const windowLabels={
  en:{minimize:'Minimize',maximize:'Maximize',restore:'Restore window'},
@@ -44,9 +44,11 @@ const inputWrap=element('div','terminal-input-wrap'),caret=element('span','termi
 caret.setAttribute('aria-hidden','true');inputWrap.append(input,caret);
 form.append(prompt,inputWrap,run);
 const content=element('div','terminal-content');
-const scanlines=element('div','terminal-crt-scanlines');scanlines.setAttribute('aria-hidden','true');
-content.append(output,form,scanlines);dialog.append(header,content);document.body.append(dialog);
-let previousFocus=null,booted=false;
+content.append(output,form);dialog.append(header,content);
+const shell=document.querySelector('.shell'),root=document.documentElement;
+const backdrop=element('div','terminal-backdrop');backdrop.hidden=true;backdrop.setAttribute('aria-hidden','true');
+document.body.append(backdrop,dialog);
+let previousFocus=null,booted=false,previousInert=false;
 const history=createHistory();
 function append(node){output.append(node);while(output.children.length>50)output.firstElementChild.remove();output.scrollTop=output.scrollHeight;}
 function line(value,className=''){append(element('div',className,value));}
@@ -70,9 +72,23 @@ function fetchInfo(){
  info.append(palette);const divider=element('div','terminal-fetch-divider');divider.setAttribute('aria-hidden','true');banner.append(art,divider,info);append(banner);
 }
 function boot(){output.replaceChildren();fetchInfo();line(copy.intro,'terminal-hint');output.scrollTop=0;booted=true;}
-function open(){if(dialog.open)return;previousFocus=document.activeElement;dialog.showModal();if(!booted)boot();input.focus();window.dispatchEvent(new Event('mirco:crt-layout'));}
-close.addEventListener('click',()=>dialog.close());
-minimize.addEventListener('click',()=>dialog.close());
+// A top-layer showModal() escapes the root filter, so keep the dialog in
+// normal paint order and explicitly preserve its modal accessibility behavior.
+function open(){
+ if(dialog.open)return;
+ previousFocus=document.activeElement;previousInert=shell.inert;shell.inert=true;
+ backdrop.hidden=false;root.classList.add('mirco-terminal-open');
+ dialog.show();if(!booted)boot();input.focus();window.dispatchEvent(new Event('mirco:crt-layout'));
+}
+function restore(){
+ if(dialog.open||backdrop.hidden)return;
+ backdrop.hidden=true;shell.inert=previousInert;root.classList.remove('mirco-terminal-open');
+ if(previousFocus instanceof HTMLElement&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});
+ previousFocus=null;window.dispatchEvent(new Event('mirco:crt-layout'));
+}
+function closeTerminal(){if(!dialog.open)return;dialog.close();restore();}
+close.addEventListener('click',closeTerminal);
+minimize.addEventListener('click',closeTerminal);
 maximize.addEventListener('click',()=>{
  const expanded=dialog.classList.toggle('is-expanded');
  maximize.setAttribute('aria-pressed',String(expanded));
@@ -81,7 +97,17 @@ maximize.addEventListener('click',()=>{
  maximize.firstElementChild.textContent=expanded?'↙':'↗';
  window.dispatchEvent(new Event('mirco:crt-layout'));
 });
-dialog.addEventListener('close',()=>{if(previousFocus instanceof HTMLElement&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});});
+dialog.addEventListener('close',restore);
+document.addEventListener('focusin',e=>{if(dialog.open&&!dialog.contains(e.target))input.focus();});
+dialog.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&!e.isComposing){e.preventDefault();closeTerminal();return;}
+ if(e.key!=='Tab'||e.defaultPrevented)return;
+ const focusable=[...dialog.querySelectorAll('button:not([disabled]),input:not([disabled]),[tabindex="0"]')].filter(el=>el.getClientRects().length>0);
+ if(!focusable.length)return;
+ const first=focusable[0],last=focusable.at(-1);
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
 const celebrate=()=>window.dispatchEvent(new Event('mirco:celebrate'));
 function secret(){open();line(copy.secret);celebrate();}
 input.addEventListener('keydown',e=>{
@@ -121,7 +147,7 @@ form.addEventListener('submit',e=>{
  case 'contact':line(document.querySelector('.contact')?.getAttribute('href')?.replace(/^mailto:/,'')||copy.contact);break;
  case 'whoami':line(copy.who);break;
  case 'retro':line('CRT: '+(toggleMode('mirco-retro')?'ON':'OFF'));break;
- case 'exit':dialog.close();break;
+ case 'exit':closeTerminal();break;
  default:line(copy.unknown);
  }
 });
@@ -129,7 +155,7 @@ window.addEventListener('mirco:terminal',open);
 let keys=[],lastKey=0;
 const konami=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 window.addEventListener('keydown',e=>{
- if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==='k'){e.preventDefault();dialog.open?dialog.close():open();return;}
+ if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==='k'){e.preventDefault();dialog.open?closeTerminal():open();return;}
  if(dialog.open||e.ctrlKey||e.metaKey||e.altKey||e.repeat||e.target.closest?.('input,textarea,select,[contenteditable]'))return;
  const now=performance.now();if(now-lastKey>1500)keys=[];lastKey=now;
  keys.push(e.key.length===1?e.key.toLowerCase():e.key);keys=keys.slice(-10);

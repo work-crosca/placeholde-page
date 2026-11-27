@@ -149,3 +149,6 @@ CRT screen-space correction: the radial map is positioned relative to the shared
 
 
 Stronger CRT optics: a cubic inverse radial map, per-axis aspect correction, and shared page/terminal glass origins bend decorative content and scanlines. The terminal's optical surface starts beneath the macOS chrome; output and prompt are warped, but native input, buttons, and other interactive targets retain their original hit areas. Corner shading remains gradient-only. Distortion is bounded on short/narrow screens and disabled with forced colors. Browser smoke checks the common origins, axis gains, scanline filters and actual heading/terminal pixel changes.
+
+
+Global CRT screen: the document root is the sole displacement target. The terminal, its frame, prompt and input, page, mascot and one viewport-wide scanline/vignette overlay share the same composited surface. There are no terminal-local optics. A native dialog opened with show() remains in the document paint stack; inert background, backdrop, focus trap, Escape, and focus restoration preserve modal behavior without escaping the root filter. SVG pixel displacement changes visual pixels, not DOM hit-test geometry, so stronger edge distortion can offset visible controls from their native click targets.
