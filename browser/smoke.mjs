@@ -147,6 +147,8 @@ try{
    await terminal.locator('.terminal-close').focus();
    await page.keyboard.press('Shift+Tab');
    assert.ok(await terminal.evaluate(el=>el.contains(document.activeElement)));
+   // A non-matching command avoids the terminal's intentional Tab completion.
+   if(await terminal.locator('input').evaluate(el=>el===document.activeElement))await terminal.locator('input').fill('zz-no-match');
    await page.keyboard.press('Tab');
    assert.equal(await terminal.locator('.terminal-close').evaluate(el=>el===document.activeElement),true);
    await page.keyboard.press('Escape');
